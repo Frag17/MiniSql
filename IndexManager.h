@@ -113,17 +113,17 @@ public:
 		int i = 0, k;
 		float f;
 		switch(Node::Type){
-		case 0:											//string
+		case CHAR:											//string
 			for (; i < num&&key >= Keys[i]; i++);
 			return i;
-		case 1:
+		case INT:
 			k = atoi(key.c_str());
 			for (; i < num; i++) {
 				int t = atoi(Keys[i].c_str());
 				if (k < t)return i;
 			}
 			return i;
-		case 2:
+		case FLOAT:
 			f = atof(key.c_str());
 			for (; i < num; i++) {
 				float t = atof(Keys[i].c_str());
