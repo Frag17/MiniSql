@@ -24,6 +24,8 @@ public:
 	std::string indexName;
 };
 
+
+
 class Table
 {
 public:
@@ -46,6 +48,7 @@ public:
 	std::string indexName;
 	std::string tableName;
 	std::string attribute;
+	int type;
 	int blockNum;
 	std::vector<int> emptyBlockOffset;
 };
