@@ -12,6 +12,9 @@
 class Attribute
 {
 public:
+	Attribute(const std::string&name,int type,int length,bool isUnique,bool isPrimaryKey,bool hasIndex,const std::string& indexName)
+		:name(name),type(type),length(length),isUnique(isUnique),
+			isPrimaryKey(isPrimaryKey),hasIndex(hasIndex),indexName(indexName){}
 	Attribute(){}
 	~Attribute(){}
 
@@ -26,9 +29,13 @@ public:
 
 
 
+
 class Table
 {
 public:
+	Table(const std::string& tableName,const std::vector<Attribute>& attributes,int blockNum,int recordSize,const std::vector<int>& emptyRecordOffset)
+		:tableName(tableName),attributes(attributes),blockNum(blockNum),
+				recordSize(recordSize),emptyRecordOffset(emptyRecordOffset){}
 	Table(){}
 	~Table(){}
 	std::string tableName;
@@ -42,13 +49,14 @@ class Index
 {
 
 public:
+	Index(std::string indexName,std::string tableName,Attribute& attribute,int blockNum,std::vector<int>& emptyBlockOffset)
+		:indexName(indexName),tableName(tableName),attribute(attribute),blockNum(blockNum),emptyBlockOffset(emptyBlockOffset){}
 	Index(){}
 	~Index(){}
 
 	std::string indexName;
 	std::string tableName;
-	std::string attribute;
-	int type;
+	Attribute attribute;  //¸Ä³ÉAttributeÀà 
 	int blockNum;
 	std::vector<int> emptyBlockOffset;
 };
@@ -63,20 +71,20 @@ public:
 	void readCatalog();
 	void writeCatalog();
 
-	std::vector<Table*>::iterator findTable(std::string& tableName);
-	std::vector<Index*>::iterator findIndex(std::string& indexName);
+	std::vector<Table*>::iterator findTable(const std::string& tableName);
+	std::vector<Index*>::iterator findIndex(const std::string& indexName);
 
-	void createTable(Table *table);
-	void createIndex(Index *index);
+	void createTable(Table &table);
+	void createIndex(Index &index);
 
-	void dropTable(std::string& tableName);
-	void dropIndex(std::string& indexName);
+	void dropTable(const std::string& tableName);
+	void dropIndex(const std::string& indexName);
 
-	bool existTable(std::string& tableName);
-	bool existIndex(std::string& indexName);
+	bool existTable(const std::string& tableName);
+	bool existIndex(const std::string& indexName);
 
-	Table* getTablePtr(std::string& tableName);
-	Index* getIndexPtr(std::string& indexName);
+	Table* getTablePtr(const std::string& tableName);
+	Index* getIndexPtr(const std::string& indexName);
 
 	std::vector<Table*>tables;
 	std::vector<Index*>indexs;
