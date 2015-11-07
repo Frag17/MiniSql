@@ -1,3 +1,7 @@
+#include"RecordManager.h"
+#include"IndexManager.h"
+#include"CatalogManager.h"
+
 
 enum Op {
 	EQ, NE, LT, GT, LE, GE
@@ -24,7 +28,7 @@ struct IndexInfo {
 class api
 {
 public:
-	string CreateTable(table t);
+	string CreateTable(Table t);
 	string DropTable(string name);
 	string CreateIndex(string inname,string tabname,string arrname);
 	string DropIndex(string inname);

@@ -1,32 +1,32 @@
-#include<api.h>
+#include"api.h"
 #include"CatalogManager.h"
 using std::string;
 extern IndexManager Ind;
 extern RecordManager Rec;
 extern CatalogManager Cat;
-string api::CreateTable(table t)
+string api::CreateTable(Table t)
 {
 	for(int i=0;i<t.attributes.size();i++)
 		if(t.attributes[i].type==0)
 			return "Unrecognized data type！！";
-	for(int i=0;i<Cat.tables.size();i++)
-		if(Cat.tables[i].tableName==t.tableName)
-			return "Table "+t.tableName+" already exists!!"
+	for (int i = 0; i < Cat.tables.size(); i++)
+		if (Cat.tables[i]->tableName == t.tableName)
+			return "Table " + t.tableName + " already exists!!";
  	Cat.createTable(&t);
  	Rec.createTable(t.tableName) ;
  	for(int i=0;i<t.attributes.size();i++)
 		if(t.attributes[i].isPrimaryKey==1)
 			return CreateIndex(t.tableName+"_"+t.attributes[i].name,t.tableName,t.attributes[i].name);
 }
-string api:DropTable(string name)
+string api::DropTable(string name)
 {
 	for(int i=0;i<Cat.tables.size();i++)
-		if(Cat.tables[i].tableName==name)
+		if(Cat.tables[i]->tableName==name)
 		{
 			for(int j=0;j<Cat.indexs.size();j++)
-				if(Cat.indexs[j].tableName==name)
-					Ind.dropIndex(Cat.indexs[j].indexName);
-			Buf.dropFile((IndexName + ".index"));
+				if(Cat.indexs[j]->tableName==name)
+					Ind.dropIndex(Cat.indexs[j]->indexName);
+			//Buf.dropFile((IndexName + ".index"));			不需要，index自己会删掉
 			Rec.dropTable(name);
 			Cat.dropTable(name);
 			return 0; 
@@ -37,31 +37,31 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 {
 	bool find=0;
 	for(int i=0;i<Cat.tables.size();i++)
-		if(Cat.tables[i].tableName==tabname)
+		if(Cat.tables[i]->tableName==tabname)
 			find=1;
 	if(find==0)
 		return "Table doesn't exist";
-	for(int i=0;i<Cat.indexs.size();i++)
-		if(Cat.indexs[i].indexName==inname)
-			return "Index "+inname+" already exists!!"
+	for (int i = 0; i < Cat.indexs.size(); i++)
+		if (Cat.indexs[i]->indexName == inname)
+			return "Index " + inname + " already exists!!";
 	for(int i=0;i<Cat.tables.size();i++)
-		if(Cat.tables[i].tableName==tabname)
+		if(Cat.tables[i]->tableName==tabname)
 		{
-			for(int j=0;j<Cat.tables[i].attributes.size();j++)
-				if(Cat.tables[i].attributes[j].name==arrname)
+			for(int j=0;j<Cat.tables[i]->attributes.size();j++)
+				if(Cat.tables[i]->attributes[j].name==arrname)
 				{
-					if(Cat.tables[i].attributes[j].isUnique==0)
+					if(Cat.tables[i]->attributes[j].isUnique==0)
 						return "Attribute "+arrname+" is not unique!!";
-					if(Cat.tables[i].attributes[j].hasIndex==1)
+					if(Cat.tables[i]->attributes[j].hasIndex==1)
 						return "Attribute "+arrname+" already has index!!";
 					Index lt;std::string indexName;
-					Cat.tables[i].attributes[j].hasIndex=1;
-					Cat.tables[i].attributes[j].indexName=inname;
+					Cat.tables[i]->attributes[j].hasIndex=1;
+					Cat.tables[i]->attributes[j].indexName=inname;
 					lt.indexName=inname;
 					lt.tableName=tabname;
 					lt.attribute=arrname;
 					Cat.createIndex(&lt);
-					Rec.createIndex(inname,tabname,arrname,Cat.tables[i].attributes[j].type);
+					Ind.createIndex(inname,tabname,arrname,Cat.tables[i]->attributes[j].type);
 					//call void selectAttribute(Table& table, int attributeOrder, Data& data);	 
 					//and call bool insertRecord(string IndexName, string key, int ptr) 
 					return "";
@@ -74,9 +74,9 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 string api::DropIndex(string inname)
 {
 	for(int i=0;i<Cat.indexs.size();i++)
-		if(Cat.indexs[i].indexName==inname)
+		if(Cat.indexs[i]->indexName==inname)
 		{
-			dropIndex(inname);
+			Ind.dropIndex(inname);
 			Cat.dropIndex(inname);
 			return "";
 		}
@@ -142,7 +142,7 @@ string api::nameCheck(string name) {
 		return name + "为数据库保留字";
 	return "";
 }
-void api::insert(string tableName, Tuple& tup) {
+string api::insert(string tableName, Tuple& tup) {
 	Table* tab = *Cat.findTable(tableName);
 	/*if (tab == nullptr) {
 		cout << "插入失败：找不到表" + tableName;
@@ -151,8 +151,8 @@ void api::insert(string tableName, Tuple& tup) {
 	Tuple ne;
 	string s = typeCheck(tup, tab->attributes, ne);
 	if (s != "") {
-		cout << "插入失败：" + s;
-		return;
+		return "插入失败：" + s;
+		
 	}
 	vector<Attribute>* pattr = &tab->attributes;
 	vector<IndexInfo> hasindex;
@@ -177,8 +177,7 @@ void api::insert(string tableName, Tuple& tup) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		int i = pin->attribute.attributeOrder;
 		if (bpt.find(ne[i]) != -1) {
-			cout << "插入失败，属性" + pin->attribute.attribute + "值" + ne[i] + "重复";
-			return;
+			return "插入失败，属性" + pin->attribute.attribute + "值" + ne[i] + "重复";
 		}
 	}
 	if (!isattr.empty()) {			//没有index的unique,遍历查询值重复
@@ -188,8 +187,7 @@ void api::insert(string tableName, Tuple& tup) {
 			int i = pat->attributeOrder;
 			for (vector<Tuple>::iterator pstr = t.begin(); pstr != t.end(); pstr ++) {
 				if ((*pstr)[0] == ne[i]) {
-					cout << "插入失败，属性" + pat->attribute + "值" + ne[i] + "重复";
-					return;
+					return "插入失败，属性" + pat->attribute + "值" + ne[i] + "重复";
 				}
 			}
 		}
@@ -199,7 +197,6 @@ void api::insert(string tableName, Tuple& tup) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		bpt.insertRecord(ne[pin->attribute.attributeOrder], ptr);
 	}
-	cout << "插入成功";
-	return;
+	return "插入成功";
 }
 
