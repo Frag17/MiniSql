@@ -4,7 +4,7 @@
 #define MAX_BLOCK_AMOUNT 100
 #define BLOCK_SIZE 4096
 
-extern CatalogManager Cat;
+//extern CatalogManager Cat;
 
 
 class Block

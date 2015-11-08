@@ -6,7 +6,7 @@ extern CatalogManager Cat;
 string api::CreateTable(Table t)
 {
 	t.blockNum=0;
-	t.recordSize=0;
+	t.recordSize=1;
 	
 	for(int i=0;i<t.attributes.size();i++)
 	{
@@ -73,6 +73,7 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 					lt.indexName=inname;
 					lt.tableName=tabname;
 					lt.attribute = Cat.tables[i]->attributes[j];
+					lt.blockNum = 0;
 					Cat.createIndex(lt);
 					Ind.createIndex(inname, Cat.tables[i]->attributes[j].type);
 					vector <int>Recpoint;
@@ -192,7 +193,7 @@ int api::datacmp(const string& Lstr, const string& Rstr, const int& type) {
 	}
 }
 
-string api::insert(string tableName, Tuple& tup) {
+string api::Insert(string tableName, Tuple& tup) {
 	if (Cat.existTable(tableName) == false)return "插入失败：找不到表" + tableName;
 	Table* tab = *Cat.findTable(tableName);
 	/*if (tab == nullptr) {
@@ -499,14 +500,14 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			printf("|");
 	}
 	printf("\n");
-	for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
+	for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();itattr++) {
 		for (int i = 0; i < itattr->attribute.length; i++)printf("-");
 		if (itattr != outputAttr.end())
 			printf("|");
 	}
 	printf("\n");
 	for (Data::iterator itdat = dat.begin(); itdat != dat.end(); itdat++) {
-		for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
+		for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();itattr++) {
 			printf("%s", (*itdat)[itattr->attributeOrder].c_str());
 			if (itattr != outputAttr.end())
 				printf("|");

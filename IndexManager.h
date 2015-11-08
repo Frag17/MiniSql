@@ -1,4 +1,7 @@
-#pragma once
+#ifndef _INDEXMANAGER_H_
+#define _INDEXMANAGER_H_
+
+#include"StdAfx.h"
 
 #ifndef ORDER_NUMBER		//B+ tree叉数
 #define ORDER_NUMBER 13
@@ -146,8 +149,6 @@ public:
 		}
 	}
 };
-
-int Node::Type;		//key类型
 
 class banch :public Node {		//非叶节点
 public:
@@ -1116,3 +1117,4 @@ public:
 	}
 };
 
+#endif _INDEXMANAGER_H_

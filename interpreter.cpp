@@ -1,9 +1,7 @@
-#include "interpreter.h"
-#include <vector>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include"StdAfx.h"
 using std::vector;
+
+extern api Api;
 void interpreter::set_order(string ORDER)
 {
 	order=ORDER;
@@ -37,7 +35,7 @@ string interpreter::next_state(char spl)
 	}
 	return ty;
 }
-string interpreter::match(string format)
+string  interpreter::match(string format)
 {
 	string re="get",lt1="",lt2;
 	format+=" ";
@@ -61,14 +59,14 @@ void attr(string lt1,string lt2,bool uni,string length,Attribute &v)
 {
 	v.name=lt1;
 	v.isUnique=uni;
-	if(lt1=="int")
+	if(lt2=="int")
 		v.type=2;
-	else if(lt1=="char")
+	else if(lt2=="char")
 	{
 		v.type=1;
-		v.length=atoi(length);
+		v.length=atoi(length.c_str());
 	}	
-	else if(lt1=="float")
+	else if(lt2=="float")
 		v.type=3;
 	else 
 		v.type=0;
@@ -93,7 +91,7 @@ void Cond(string attrname,string op,string value,Condition &condition)
 }
 void interpreter::quit()
 {
-	printf("Quit successful")
+	printf("Quit successful");
 	exit(0);
 }
 void interpreter::create_table()
@@ -208,7 +206,7 @@ void interpreter::drop_table()
 	lt1=match("* ;");
 	if(lt1!="")
 	{
-		string msg=Api.dropTable(lt1);
+		string msg=Api.DropTable(lt1);
 		if(msg!="")
 			printf("%s\n",msg.c_str());
 	}
@@ -363,7 +361,9 @@ void interpreter::select()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	string msg=Api.Select(tabname,v);
+	vector<string> vt;
+	vt.push_back("*");
+	string msg = Api.Select(tabname, vt, v);
 	if(msg!="")
 		printf("%s\n",msg.c_str());
 }
@@ -512,9 +512,9 @@ void interpreter::del()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	string msg=Api.Delete(tabname,v);
+	/*string msg=Api.Delete(tabname,v);
 	if(msg!="")
-		printf("%s\n",msg.c_str());
+		printf("%s\n",msg.c_str());*/
 }
 
 void interpreter::exec()
