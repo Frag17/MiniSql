@@ -7,6 +7,10 @@ enum Op {
 	EQ, NE, LT, GT, LE, GE
 };
 
+struct AttributeInfo {
+	Attribute attribute;
+	int attributeOrder;
+};
 
 struct Condition {
 	string attributeName;
@@ -37,4 +41,5 @@ private:
 	string singleCheck(string& value, int type);
 	string typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New);
 	string nameCheck(string name);
+	int datacmp(const string& Lstr, const string& rstr, const int& type);	//按类型返回比较值,-1表示小于，0表示等于，1表示大于
 };
