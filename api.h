@@ -1,3 +1,7 @@
+#include"RecordManager.h"
+#include"IndexManager.h"
+#include"CatalogManager.h"
+
 
 enum Op {
 	EQ, NE, LT, GT, LE, GE
@@ -9,7 +13,7 @@ struct AttributeInfo {
 };
 
 struct Condition {
-	AttributeInfo attributeOrder;
+	AttributeInfo attribute;
 	int type;
 	Op op;
 	string value;
@@ -24,15 +28,16 @@ struct IndexInfo {
 class api
 {
 public:
-	string CreateTable(table t);
+	string CreateTable(Table t);
 	string DropTable(string name);
 	string CreateIndex(string inname,string tabname,string arrname);
 	string DropIndex(string inname);
-	string Select();
-	string Insert(string tabname,Tuple &v);
+	string Select(string tableName, vector<string>& attributes, vector<Condition>& conditions);
+	//string Insert(string tabname,Tuple &v);
 	string Del();
 	string insert(string tableName, Tuple& tup);
 private:
+	string singleCheck(string& value, int type);
 	string typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New);
 	string nameCheck(string name);
 };

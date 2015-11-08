@@ -19,7 +19,7 @@ CatalogManager::~CatalogManager()
 		delete *it_index;
 }
 
-std::vector<Table*>::iterator CatalogManager::findTable(std::string& tableName)
+std::vector<Table*>::iterator CatalogManager::findTable(const std::string& tableName)
 {
 	std::vector<Table*>::iterator it;
 	for (it = tables.begin(); it != tables.end(); it++)
@@ -28,19 +28,19 @@ std::vector<Table*>::iterator CatalogManager::findTable(std::string& tableName)
 			return it;
 	}
 }
-std::vector<Index*>::iterator CatalogManager::findIndex(std::string& indexName)
+std::vector<Index*>::iterator CatalogManager::findIndex(const std::string& indexName)
 {
 	std::vector<Index*>::iterator it;
 	for (it = indexs.begin(); it != indexs.end(); it++)
 	{
-		if ((*it)->tableName == indexName)
+		if ((*it)->indexName == indexName)
 			return it;
 	}
 }
 
 void CatalogManager::readCatalog()
 {
-	std::string filename = "table.catlog";
+	std::string filename = "table.catalog";
 	std::fstream  fileIn(filename, std::ios::in);
 	int tableNum;
 	fileIn >> tableNum;
@@ -59,6 +59,12 @@ void CatalogManager::readCatalog()
 			fileIn >> attribute.length;
 			fileIn >> attribute.isUnique;
 			fileIn >> attribute.isPrimaryKey;
+			fileIn >> attribute.hasIndex;
+			if (attribute.hasIndex == 1)
+				fileIn >> attribute.indexName;
+			else
+				attribute.indexName = "";
+			
 			tablePtr->attributes.push_back(attribute);
 		}
 		fileIn >> tablePtr->blockNum;
@@ -74,8 +80,9 @@ void CatalogManager::readCatalog()
 		tables.push_back(tablePtr);
 	}
 	fileIn.close();
+
 	//index
-	filename = "index.catlog";
+	filename = "index.catalog";
 	fileIn.open(filename, std::ios::in);
 	int indexNum;
 	fileIn >> indexNum;
@@ -84,7 +91,16 @@ void CatalogManager::readCatalog()
 		Index *indexPtr = new Index();
 		fileIn >> indexPtr->indexName;
 		fileIn >> indexPtr->tableName;
-		fileIn >> indexPtr->attribute;
+		fileIn >> indexPtr->attribute.name;
+		for (int i = 0; i < tables.size(); i++)
+		{
+			Table* tablePtr = tables[i];
+			if (tablePtr->tableName == indexPtr->tableName)
+				for (int j = 0; j < (tablePtr->attributes).size(); j++)
+					if (tablePtr->attributes[j].name == indexPtr->attribute.name)
+						indexPtr->attribute = tablePtr->attributes[j];
+		}
+
 		fileIn >> indexPtr->blockNum;
 		int emptyBlockOffsetNum;
 		fileIn >> emptyBlockOffsetNum;
@@ -101,84 +117,95 @@ void CatalogManager::readCatalog()
 void CatalogManager::writeCatalog()
 {
 	//table
-	std::string filename = "table.catlog";
+	std::string filename = "table.catalog";
 	std::fstream  fileOut(filename, std::ios::out);
-	fileOut << tables.size();
+	fileOut << tables.size();	fileOut << ' ';
 	std::vector<Table*>::iterator it_table;
 	for (it_table = tables.begin(); it_table != tables.end();it_table++)
 	{
 		Table *tablePtr = *it_table;
-		fileOut << tablePtr->tableName;
-		fileOut << tablePtr->attributes.size();
+		fileOut << tablePtr->tableName;	fileOut << ' ';
+		fileOut << tablePtr->attributes.size();	fileOut << ' ';
 		std::vector<Attribute>::iterator it_attribute;
 		for (it_attribute = tablePtr->attributes.begin(); it_attribute != tablePtr->attributes.end();it_attribute++)
 		{
 			Attribute attribute = *it_attribute;
-			fileOut << attribute.name;
-			fileOut << attribute.type;
-			fileOut << attribute.length;
-			fileOut << attribute.isUnique;
-			fileOut << attribute.isPrimaryKey;
+			fileOut << attribute.name;	fileOut << ' ';
+			fileOut << attribute.type;	fileOut << ' ';
+			fileOut << attribute.length;	fileOut << ' ';
+			fileOut << attribute.isUnique;	fileOut << ' ';
+			fileOut << attribute.isPrimaryKey;	fileOut << ' ';
+			fileOut << attribute.hasIndex;	fileOut << ' ';
+			if (attribute.hasIndex == 1)
+			{
+				fileOut << attribute.indexName; fileOut << ' ';
+			}
 		}
-		fileOut << tablePtr->blockNum;
-		fileOut << tablePtr->recordSize;
-		fileOut << tablePtr->emptyRecordOffset.size();
+		fileOut << tablePtr->blockNum;	fileOut << ' ';
+		fileOut << tablePtr->recordSize;	fileOut << ' ';
+		fileOut << tablePtr->emptyRecordOffset.size();	fileOut << ' ';
 		std::vector<int>::iterator it_emptyRecordOffset;
 		for (it_emptyRecordOffset = tablePtr->emptyRecordOffset.begin(); 
 			it_emptyRecordOffset != tablePtr->emptyRecordOffset.end();it_emptyRecordOffset++)
 		{
 			int recordOffset = *it_emptyRecordOffset;
-			fileOut << recordOffset;
+			fileOut << recordOffset;	fileOut << ' ';
 		}
 	}
 	fileOut.close();
 
 	//index
-	filename = "index.catlog";
+	filename = "index.catalog";
 	fileOut.open(filename, std::ios::out);
-	fileOut << indexs.size();
+	fileOut << indexs.size();  fileOut << ' ';
 	std::vector<Index*>::iterator it_index;
 	for (it_index = indexs.begin(); it_index != indexs.end();it_index++)
 	{
 		Index *indexPtr = *it_index;
-		fileOut << indexPtr->indexName;
-		fileOut << indexPtr->tableName;
-		fileOut << indexPtr->attribute;
-		fileOut << indexPtr->blockNum;
-		fileOut <<  indexPtr->emptyBlockOffset.size();
+		fileOut << indexPtr->indexName;  fileOut << ' ';
+		fileOut << indexPtr->tableName;  fileOut << ' ';
+		fileOut << indexPtr->attribute.name;  fileOut << ' ';
+		fileOut << indexPtr->blockNum;  fileOut << ' ';
+		fileOut << indexPtr->emptyBlockOffset.size();  fileOut << ' ';
 		std::vector<int>::iterator it_emptyBlockOffset;
 		for (it_emptyBlockOffset = indexPtr->emptyBlockOffset.begin();
 			it_emptyBlockOffset != indexPtr->emptyBlockOffset.end();it_emptyBlockOffset++)
 		{
 			int blockOffset = *it_emptyBlockOffset;
-			fileOut << blockOffset;
+			fileOut << blockOffset;  fileOut << ' ';
 		}
 	}
 	fileOut.close();
 }
 
-void CatalogManager::createTable(Table *table)
+void CatalogManager::createTable(Table &table)
 {
 	Table *tablePtr = new Table();
-	tablePtr->tableName = table->tableName;
-	tablePtr->attributes = table->attributes;
-	tablePtr->blockNum = table->blockNum;
-	tablePtr->recordSize = table->recordSize;
-	tablePtr->emptyRecordOffset = table->emptyRecordOffset;
+	tablePtr->tableName = table.tableName;
+	tablePtr->attributes = table.attributes;
+	tablePtr->blockNum = table.blockNum;
+	tablePtr->recordSize = table.recordSize;
+	tablePtr->emptyRecordOffset = table.emptyRecordOffset;
 	tables.push_back(tablePtr);
 }
-void CatalogManager::createIndex(Index *index)
+void CatalogManager::createIndex(Index &index)
 {
 	Index *indexPtr = new Index();
-	indexPtr->indexName = index->indexName;
-	indexPtr->tableName = index->indexName;
-	indexPtr->attribute = index->attribute;
-	indexPtr->blockNum = index->blockNum;
-	indexPtr->emptyBlockOffset = index->emptyBlockOffset;
+	indexPtr->indexName = index.indexName;
+	indexPtr->tableName = index.tableName;
+	indexPtr->attribute = index.attribute;
+	indexPtr->blockNum = index.blockNum;
+	indexPtr->emptyBlockOffset = index.emptyBlockOffset;
 	indexs.push_back(indexPtr);
+
+	Table* tablePtr = getTablePtr(index.tableName);
+	for (int i = 0; i < tablePtr->attributes.size(); i++)
+		if (tablePtr->attributes[i].name == index.attribute.name)
+			tablePtr->attributes[i] = index.attribute;
+
 }
 
-void CatalogManager::dropTable(std::string& tableName)
+void CatalogManager::dropTable(const std::string& tableName)
 {
 	std::vector<Table*>::iterator it_table;
 	for (it_table = tables.begin(); it_table != tables.end(); it_table++)
@@ -195,9 +222,10 @@ void CatalogManager::dropTable(std::string& tableName)
 		{
 			delete (*it_index);
 			indexs.erase(it_index);
+			break;
 		}
 }
-void CatalogManager::dropIndex(std::string& indexName)
+void CatalogManager::dropIndex(const std::string& indexName)
 {
 	std::vector<Index*>::iterator it_index;
 	for (it_index = indexs.begin(); it_index != indexs.end(); it_index++)
@@ -209,7 +237,7 @@ void CatalogManager::dropIndex(std::string& indexName)
 		}
 }
 
-bool CatalogManager::existTable(std::string& tableName)
+bool CatalogManager::existTable(const std::string& tableName)
 {
 	std::vector<Table*>::iterator it_table;
 	for (it_table = tables.begin(); it_table != tables.end(); it_table++)
@@ -217,7 +245,7 @@ bool CatalogManager::existTable(std::string& tableName)
 			return 1;
 	return 0;
 }
-bool CatalogManager::existIndex(std::string& indexName)
+bool CatalogManager::existIndex(const std::string& indexName)
 {
 	std::vector<Index*>::iterator it_index;
 	for (it_index = indexs.begin(); it_index != indexs.end(); it_index++)
@@ -226,7 +254,7 @@ bool CatalogManager::existIndex(std::string& indexName)
 	return 0;
 }
 
-Table* CatalogManager::getTablePtr(std::string& tableName)
+Table* CatalogManager::getTablePtr(const std::string& tableName)
 {
 	std::vector<Table*>::iterator it_table;
 	for (it_table = tables.begin(); it_table != tables.end(); it_table++)
@@ -234,7 +262,7 @@ Table* CatalogManager::getTablePtr(std::string& tableName)
 			return *it_table;
 	return NULL;
 }
-Index* CatalogManager::getIndexPtr(std::string& indexName)
+Index* CatalogManager::getIndexPtr(const std::string& indexName)
 {
 	std::vector<Index*>::iterator it_index;
 	for (it_index = indexs.begin(); it_index != indexs.end(); it_index++)
