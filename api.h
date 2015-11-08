@@ -7,13 +7,10 @@ enum Op {
 	EQ, NE, LT, GT, LE, GE
 };
 
-struct AttributeInfo {
-	string attribute;
-	int attributeOrder;
-};
 
 struct Condition {
-	AttributeInfo attribute;
+	string attributeName;
+	int attributeOrder;
 	int type;
 	Op op;
 	string value;

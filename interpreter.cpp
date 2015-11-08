@@ -57,9 +57,8 @@ string interpreter::match(string format)
 	}
 	return re;
 }
-Attribute attr(string lt1,string lt2,bool uni,string length)
+void attr(string lt1,string lt2,bool uni,string length,Attribute &v)
 {
-	Attribute v;
 	v.name=lt1;
 	v.isUnique=uni;
 	if(lt1=="int")
@@ -73,16 +72,35 @@ Attribute attr(string lt1,string lt2,bool uni,string length)
 		v.type=3;
 	else 
 		v.type=0;
-	return v;
+}
+
+void Cond(string attrname,string op,string value,Condition &condition)
+{
+	condition.attributeName=attrname;
+	condition.value=value;
+	if(op=="=")
+		condition.op=EQ;
+	else if(op=="<")
+		condition.op=LT;
+	else if(op==">")
+		condition.op=GT;
+	else if(op=="<=")
+		condition.op=LE;
+	else if(op==">=")
+		condition.op=GE;
+	else if(op=="<>")
+		condition.op=NE;
 }
 void interpreter::quit()
 {
+	printf("Quit successful")
 	exit(0);
 }
 void interpreter::create_table()
 {
 	string lt,name,lt1,lt2,lt3;
 	Table t;
+	Attribute attribute;
 	t.tableName=next_state();
 	lt=next_state();
 	if(lt!="(")
@@ -118,7 +136,10 @@ void interpreter::create_table()
 			break;
 		}
 		else if(lt3==",")
-			t.attributes.push_back(attr(lt1,lt2,0,""));
+		{
+			attr(lt1,lt2,0,"",attribute);
+			t.attributes.push_back(attribute);
+		}
 		else if(lt2=="char"&&lt3=="(")
 		{
 			string length="";
@@ -135,7 +156,10 @@ void interpreter::create_table()
 			{
 				lt3=next_state();
 				if(lt3==",")
-					t.attributes.push_back(attr(lt1,lt2,1,length));
+				{
+					attr(lt1,lt2,1,length,attribute);
+					t.attributes.push_back(attribute);
+				}
 				else 
 				{
 					printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -143,7 +167,10 @@ void interpreter::create_table()
 				}
 			}
 			else if(lt3==",")
-				t.attributes.push_back(attr(lt1,lt2,0,length));
+			{
+				attr(lt1,lt2,0,length,attribute);
+				t.attributes.push_back(attribute);
+			}
 			else 
 			{
 				printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -153,7 +180,10 @@ void interpreter::create_table()
 		else 
 		{
 			if(lt3=="unique")
-				t.attributes.push_back(attr(lt1,lt2,1,""));
+			{
+				attr(lt1,lt2,1,"",attribute);
+				t.attributes.push_back(attribute);
+			}
 			else 
 			{
 				printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -167,7 +197,9 @@ void interpreter::create_table()
 			}
 		}
 	}
-	printf("call create table api\n");//call api
+	string msg=Api.CreateTable(t);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
 }
 
 void interpreter::drop_table()
@@ -176,7 +208,9 @@ void interpreter::drop_table()
 	lt1=match("* ;");
 	if(lt1!="")
 	{
-		printf("call drop table api\n");//call api
+		string msg=Api.dropTable(lt1);
+		if(msg!="")
+			printf("%s\n",msg.c_str());
 	}
 	else 
 	{
@@ -197,8 +231,9 @@ void interpreter::create_index()
 	}
 	else 
 	{
-		printf("call create index api\n");//call api
-		return ;
+		string msg=Api.CreateIndex(inname,tabname,arrname);
+		if(msg!="")
+			printf("%s\n",msg.c_str());
 	}
 }
 void interpreter::drop_index()
@@ -207,7 +242,9 @@ void interpreter::drop_index()
 	inname=match("* ;");
 	if(inname!="")
 	{
-		printf("call drop index api\n");//call api
+		string msg=Api.DropIndex(inname);
+		if(msg!="")
+			printf("%s\n",msg.c_str());
 	}
 	else 
 	{
@@ -218,8 +255,9 @@ void interpreter::drop_index()
 
 void interpreter::select()
 {
-	vector<condition> v;
+	vector<Condition> v;
 	string lt,tabname,lt1,lt2,lt3;
+	Condition condition;
 	lt=match("* from");
 	if(lt!="*")
  	{
@@ -308,7 +346,8 @@ void interpreter::select()
 				return ;
 				
 			}
-			v.push_back(condition(lt1,lt2,lt3));
+			Cond(lt1,lt2,lt3,condition);
+			v.push_back(condition);
 			lt=next_state();
 			if(lt==";")
 				break;
@@ -324,11 +363,14 @@ void interpreter::select()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	printf("call select api\n");//call api
+	string msg=Api.Select(tabname,v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
 }
 
 void interpreter::insert()
 {
+	
 	vector<string> v;
 	int cnt=0;
 	string lt,tabname;
@@ -362,12 +404,15 @@ void interpreter::insert()
 		printf("Syntax error! can't recognize %s\n",lt.c_str());
 		return ;
 	}
-	printf("call insert api\n");//call api
+	string msg=Api.Insert(tabname,v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
 }
 void interpreter::del()
 {
-	vector<condition> v;
+	vector<Condition> v;
 	string lt,tabname,lt1,lt2,lt3;
+	Condition condition;
 	tabname=match("from *");
 	if(tabname=="")
 	{
@@ -450,7 +495,8 @@ void interpreter::del()
 				return ;
 				
 			}
-			v.push_back(condition(lt1,lt2,lt3));
+			Cond(lt1,lt2,lt3,condition);
+			v.push_back(condition);
 			lt=next_state();
 			if(lt==";")
 				break;
@@ -466,7 +512,9 @@ void interpreter::del()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	printf("call delete api\n");//call api
+	string msg=Api.Delete(tabname,v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
 }
 
 void interpreter::exec()

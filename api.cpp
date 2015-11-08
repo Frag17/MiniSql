@@ -6,14 +6,28 @@ extern RecordManager Rec;
 extern CatalogManager Cat;
 string api::CreateTable(Table t)
 {
+	blockNum;
+	int recordSize;
+	t.blockNum=0;
+	t.recordSize=0;
+	
 	for(int i=0;i<t.attributes.size();i++)
+	{
 		if(t.attributes[i].type==0)
 			return "Unrecognized data type£¡£¡";
+		if(t.attributes[i].type==1)
+		    t.recordSize+=t.attributes[i].length;
+  		else 
+		{
+			t.attributes[i].length=11;
+			t.recordSize+=t.attributes[i].length;
+		}
+	}
 	for (int i = 0; i < Cat.tables.size(); i++)
 		if (Cat.tables[i]->tableName == t.tableName)
 			return "Table " + t.tableName + " already exists!!";
  	Cat.createTable(&t);
- 	Rec.createTable(t.tableName) ;
+ 	Rec.createTable(t.tableName);
  	for(int i=0;i<t.attributes.size();i++)
 		if(t.attributes[i].isPrimaryKey==1)
 			return CreateIndex(t.tableName+"_"+t.attributes[i].name,t.tableName,t.attributes[i].name);
@@ -56,16 +70,19 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 						return "Attribute "+arrname+" is not unique!!";
 					if(Cat.tables[i]->attributes[j].hasIndex==1)
 						return "Attribute "+arrname+" already has index!!";
-					Index lt;std::string indexName;
+					Index lt;
 					Cat.tables[i]->attributes[j].hasIndex=1;
 					Cat.tables[i]->attributes[j].indexName=inname;
 					lt.indexName=inname;
 					lt.tableName=tabname;
 					lt.attribute=arrname;
-					Cat.createIndex(&lt);
+					Cat.createIndex(lt);
 					Ind.createIndex(inname,tabname,arrname,Cat.tables[i]->attributes[j].type);
-					//call void selectAttribute(Table& table, int attributeOrder, Data& data);	 
-					//and call bool insertRecord(string IndexName, string key, int ptr) 
+					vector <int>Recpoint;
+					SingleData Recattr;
+					Rec.selectAttribute(Cat.tables[i],j,Recattr,Recpoint);
+					for(int k=0;k<Recattr.size());k++)
+						Ind.insertRecord(inname,Recattr[k],Recpoint[k]);
 					return "";
 				}
 		}
