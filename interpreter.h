@@ -1,45 +1,5 @@
-#include<string>
-#include"CatalogManager.h"
-#include"RecordManager.h"
-using std::string;
-struct attr
-{
-	string name;
-	string ty;
-	bool uni;
-	attr()
-	{
-		name="";
-		ty="";
-		uni=0;
-	}
-	attr(string NAME,string TY,bool UNI)
-	{
-		name=NAME;
-		ty=TY;
-		uni=UNI;
-	}
-};
-
-struct condition
-{
-	string seg1;
-	string op;
-	string seg2;
-	condition()
-	{
-		seg1="";
-		seg2="";
-		op="";
-	}
-	condition(string SEG1,string OP,string SEG2)
-	{
-		seg1=SEG1;
-		op=OP;
-		seg2=SEG2;
-	}
-};
-
+#pragma once
+#include <string>
 class interpreter
 {
 private:

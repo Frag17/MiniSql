@@ -7,16 +7,13 @@
 #include<vector>
 #include<sstream>
 #include<fstream>
+#include<cstdlib>
 using namespace std;
 
 #include"BufferManager.h"
-#include"RecordManager.h"
 #include"CatalogManager.h"
+#include"RecordManager.h"
 #include"IndexManager.h"
 #include"api.h"
+#include"interpreter.h"
 
-
-BufferManager Buf;
-RecordManager Rec;
-CatalogManager Cat;
-IndexManager Ind;
