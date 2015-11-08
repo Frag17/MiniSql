@@ -1,15 +1,15 @@
 #ifndef _Buffer_Manager_
 #define _Buffer_Manager_
 
-#define MAX_BLOCK_AMOUNT 10000
-#define BLOCK_SIZE 4096
+#define MAX_BLOCK_AMOUNT 5
+#define BLOCK_SIZE 20
 #include<string>
 #include<list>
 #include<map>
 #include<vector>
 #include"CatalogManager.h"
 
-extern CatalogManager catalog;
+extern CatalogManager Cat;
 
 
 class Block
@@ -104,10 +104,9 @@ public:
 	void clearPin();//再说
 
 	//得到文件中某一块中某处的内容。返回该内容组成的字符串
-	std::string getValue(const std::string& fileName, int blockOffset, int start, int end);
-	//std::string getValue(std::string& fileName, int blockOffset,int position);
-	//insertValue.加入
-
+	std::string getRecord(const std::string& fileName, int blockOffset, int start);
+	//得到文件中一个块的内容。返回该内容组成的字符串
+	std::string getBlock(const std::string& fileName, int blockOffset);
 
 	//改变文件中的值。start是在block中想要改变的起始位置，字符串是要改变成的内容
 	void changeValue(const std::string& fileName, int blockOffset, int start, std::string& c);
@@ -124,7 +123,7 @@ public:
 	//删除一个block。内部实现：将该block的内容写0
 	void deleteBlock(const std::string &fileName, int blockOffset);//给indexManager
 
-	int insertRecord(const std::string& fileName, const std::string& content);//给recordManager
+	int insertRecord(const std::string& fileName, const std::string& content);//给recordManager,返回ptr
 	
 	//插入一个block。内部实现：若文件中有之前被删除的空位，则加入。若没有，则加入到文件末尾。
 	//若文件末尾没有可用的空位，则文件末尾增加空位，然后加入字符窜内容

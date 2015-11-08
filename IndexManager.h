@@ -17,18 +17,30 @@ extern BufferManager Buf;
 class Node {				//节点接口
 public:
 	int selfPtr;			//自身offset
-	string Keys[N - 1];			//记录
+	string Keys[N - 1];		//记录
 	int Ptrs[N];		//指针，实际为blockoffset
 	int Parent;				//父节点，blockoffset，-1表示没有
 	static int Type;		//key类型
 	int num;				//节点记录数
 	bool isLeaf;
 
-	Node() { num = 0; }
+	Node() {  num = 0; }
+	Node(const Node& n):selfPtr(n.selfPtr),Parent(n.Parent), num(n.num), isLeaf(n.isLeaf) {
+		int i;
+		//Keys = new string[N - 1];
+		for (i = 0; i < n.num; i++) {
+			Keys[i] = n.Keys[i];
+			Ptrs[i] = n.Ptrs[i];
+		}
+		Ptrs[i] = n.Ptrs[i];
+		Ptrs[N - 1] = n.Ptrs[N - 1];
+	}
+	//~Node() {}
 
 	/*将string形式存储的节点信息转换为节点*/
 	Node(string str) {
 		stringstream ss;
+		//Keys = new string[N - 1];
 		char t[256];
 		ss << str;
 		ss >> selfPtr;
@@ -37,10 +49,10 @@ public:
 		ss >> num;
 		for (int i = 0; i < num; i++) {
 			ss >> Ptrs[i];
-			ss >> t[0];
+			ss.get();
 			ss.get(t, 256, '\t');
 			Keys[i] = t;
-			ss >> t[0];
+			ss.get();
 		}
 		if (isLeaf) {
 			ss >> Ptrs[N - 1];
@@ -71,12 +83,15 @@ public:
 		}
 
 		string t;
-		ss >> t;
+		char *ch = new char[4096];
+		ss.getline(ch, 4095);
+		t = ch;
+		delete[] ch;
 		return t;
 	}
 
-	virtual int insertRecord(string Key, int Ptr) {};
-	virtual int deleteRecord(int Order) {};
+	virtual int insertRecord(string Key, int Ptr) { return -1; };
+	virtual int deleteRecord(int Order) { return -1; };
 	
 	/*找到一个指针在节点中的位置,-1表示不存在*/
 	virtual int find(int Ptr) {
@@ -140,12 +155,24 @@ int Node::Type;		//key类型
 
 class banch :public Node {		//非叶节点
 public:
-	banch() { isLeaf = false; num = 0; }
-	banch(const Node& n) {
+	banch():Node() { isLeaf = false; num = 0; }
+	banch(const banch& b):Node() {
+		selfPtr = b.selfPtr;
+		Parent = b.Parent;
+		num = b.num;
+		isLeaf = false;
+		for (int i = 0; i < num; i ++) {
+			Keys[i] = b.Keys[i];
+			Ptrs[i] = b.Ptrs[i];
+		}
+		Ptrs[num] = b.Ptrs[num];
+	}
+	banch(const Node& n):Node() {
 		selfPtr = n.selfPtr;
 		num = n.num;
 		Parent = n.Parent;
 		isLeaf = false;
+		Ptrs[0] = n.Ptrs[0];
 		for (int i = 0; i < num; i++) {
 			Ptrs[i] = n.Ptrs[i];
 			Keys[i] = n.Keys[i];
@@ -160,12 +187,12 @@ public:
 		int n = getInsertPosition(key);
 		if (n == -1)return n;
 		int i = num;
-		for (; i > n+1; i--) {
+		for (; i > n; i--) {
 			Keys[i] = Keys[i - 1];
 			Ptrs[i + 1] = Ptrs[i];
 		}
-		Keys[i - 1] = key;
-		Ptrs[i] = ptr;
+		Keys[i] = key;
+		Ptrs[i + 1] = ptr;
 		num++;
 		return n;
 	}
@@ -190,8 +217,19 @@ public:
 
 class Leaf :public Node {			//叶节点
 public:
-	Leaf() { isLeaf = true; num = 0; }
-	Leaf(const Node& n) {
+	Leaf():Node() { isLeaf = true; num = 0; }
+	Leaf(const Leaf& l):Node() {
+		selfPtr = l.selfPtr;
+		Parent = l.Parent;
+		num = l.num;
+		isLeaf = true;
+		for (int i = 0; i < num; i ++ ) {
+			Keys[i] = l.Keys[i];
+			Ptrs[i] = l.Ptrs[i];
+		}
+		Ptrs[N - 1] = l.Ptrs[N - 1];
+	}
+	Leaf(const Node& n):Node() {
 		selfPtr = n.selfPtr;
 		num = n.num;
 		Parent = n.Parent;
@@ -222,7 +260,7 @@ public:
 
 	/*根据指针、记录位置删除一条记录*/
 	int deleteRecord(int Order) {
-		for (int i = Order; i < num; i++) {
+		for (int i = Order; i < num - 1; i++) {
 			Ptrs[i] = Ptrs[i + 1];
 			Keys[i] = Keys[i + 1];
 		}
@@ -257,6 +295,7 @@ private:
 
 	/*一个节点记录过少，使用相邻节点进行平衡*/
 	bool balanceNode(Node* Left, Node* Right) {
+		int size;
 		int n = (Left->num + Right->num);
 		if (n < N - 1)return false;
 		if (Left->isLeaf) {
@@ -283,7 +322,7 @@ private:
 				Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
 				string t = bt->getContent(0, 4);
 				//string t = Buf.getValue((indexName + ".index"), P, 0, 4);
-				int size = atoi(t.c_str());
+				size = atoi(t.c_str());
 				t = bt->getContent(5, 5 + size);
 				//t = Buf.getValue((indexName + ".index"), P, 5, 5 + size);
 				Node child(t);
@@ -294,6 +333,7 @@ private:
 				ss << size;
 				string t2;
 				ss >> t2;
+				bt->changeContent(0, "    ");
 				bt->changeContent(0, t2);
 				//Buf.changeValue((indexName + ".index"), P, 0, t2);
 				bt->changeContent(5, t);
@@ -311,17 +351,18 @@ private:
 				Block* bt = *Buf.readFileBlock((indexName + ".index"), P2);
 				string t = bt->getContent(0, 4);
 				//string t = Buf.getValue((indexName + ".index"), P2, 0, 4);
-				int size = atoi(t.c_str());
+				size = atoi(t.c_str());
 				t = bt->getContent(5, 5 + size);
 				//string t = Buf.getValue((indexName + ".index"), P2, 5, 5 + size);
 				Node child(t);
 				child.Parent = Right->selfPtr;
 				t = (string)child;
-				int size = t.length();
+				size = t.length();
 				stringstream ss;
 				ss << size;
 				string t2;
 				ss >> t2;
+				bt->changeContent(0, "    ");
 				bt->changeContent(0, t2);
 				//Buf.changeValue((indexName + ".index"), P2, 0, t2);
 				bt->changeContent(5, t);
@@ -354,11 +395,12 @@ private:
 				Node child(t);
 				child.Parent = Left->selfPtr;
 				t = (string)child;
-				int size = t.length();
+				size = t.length();
 				stringstream ss;
 				ss << size;
 				string t2;
 				ss >> t2;
+				bt->changeContent(0, "    ");
 				bt->changeContent(0, t2);
 				//Buf.changeValue((indexName + ".index"), P, 0, t2);
 				bt->changeContent(5, t);
@@ -383,11 +425,12 @@ private:
 			Node child(t);
 			child.Parent = Left->selfPtr;
 			t = (string)child;
-			int size = t.length();
+			size = t.length();
 			stringstream ss;
 			ss << size;
 			string t2;
 			ss >> t2;
+			bt->changeContent(0, "    ");
 			bt->changeContent(0, t2);
 			//Buf.changeValue((indexName + ".index"), P, 0, t2);
 			bt->changeContent(5, t);
@@ -424,18 +467,48 @@ private:
 			}
 			New->Keys[0] = NewKey;
 			New->Ptrs[1] = NewP;
+			/**/
+			string s2 = Buf.getValue((indexName + ".index"), NewP, 0, 4);
+			int size = atoi(s2.c_str());
+			string s = Buf.getValue((indexName + ".index"), NewP, 5, 5 + size);
+			Node no = s;
+			no.Parent = New->selfPtr;
+			s = no;
+			size = s.length();
+			stringstream ss;
+			ss << size;
+			ss >> s2;
+			Buf.changeValue((indexName + ".index"), NewP, 0, (string)"    ");
+			Buf.changeValue((indexName + ".index"), NewP, 0, s2);
+			Buf.changeValue((indexName + ".index"), NewP, 5, s);
+
 			NewP = Old->Ptrs[Old->num];
 			Old->deleteRecord(Old->num);
 			New->Ptrs[0] = NewP;
-			New->num;
+			/**/
+			s2 = Buf.getValue((indexName + ".index"), NewP, 0, 4);
+			size = atoi(s2.c_str());
+			s = Buf.getValue((indexName + ".index"), NewP, 5, 5 + size);
+			no = s;
+			no.Parent = New->selfPtr;
+			s = no;
+			size = s.length();
+			ss.clear();
+			ss << size;
+			ss >> s2;
+			Buf.changeValue((indexName + ".index"), NewP, 0, (string)"    ");
+			Buf.changeValue((indexName + ".index"), NewP, 0, s2);
+			Buf.changeValue((indexName + ".index"), NewP, 5, s);
+
+			New->num++;
 		}
 
 		return balanceNode(Old, New);
 	}
 
 	/*找到一个记录应该在的子节点*/
-	Leaf findInLeaf(string Key) {
-		if (rootPtr == NOT_EXIST)return Leaf();
+	Leaf* findInLeaf(string& Key) {
+		if (rootPtr == NOT_EXIST)return new Leaf();
 		Node t;
 		string s = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
 		int size = atoi(s.c_str());
@@ -443,21 +516,22 @@ private:
 		t = s;
 		while (!(t.isLeaf)) {
 			int n = t.getInsertPosition(Key);
-			if (n < 0)return Leaf();
-			string s = Buf.getValue((indexName + ".index"), n, 0, 4);
+			if (n < 0)return new Leaf();
+			int offset = t.Ptrs[n];
+			string s = Buf.getValue((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s.c_str());
-			s = Buf.getValue((indexName + ".index"), n, 5, 5 + size);
+			s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
 			t = s;
 		}
 
-		return (Leaf)t;
+		return new Leaf(t);
 	}
 
 public:
 	BPlusTree() { rootPtr = -1; }
 
 	/*新建index*/
-	void NewIndex(string indexname, int type) {
+	void NewIndex(string& indexname,const int& type) {
 		rootPtr = -1;
 		Node::Type = type;
 		indexName = indexname;
@@ -466,48 +540,72 @@ public:
 		ss.clear();
 		ss << type << ' ' << rootPtr;
 		string t;
-		ss >> t;
-		Buf.changeValue((indexname + ".index"), 0, 0, t);
+		char ch[256];
+		ss.getline(ch, 256);
+		t = ch;
+		Buf.insertBlock((indexname + ".index"), t);
 
 		/*TODO:修改catalog*/
 	}
 
 	/*打开index*/
-	void OpenIndex(string indexname) {
+	void OpenIndex(string& indexname) {
 		indexName = indexname;
 		string t = Buf.getValue((indexname + ".index"), 0, 0, 10);
 		stringstream ss;
 		ss.clear();
+		ss << t;
 		ss >> Node::Type;
 		ss >> rootPtr;
 	}
 
 	/*查找一条记录*/
-	int find(string Key) {
-		Leaf* t = &findInLeaf(Key);
-		if (t->num == 0)return NOT_EXIST;
-		return t->find(Key);
+	int find(string& Key) {
+		Leaf* t = findInLeaf(Key);
+		if (t->num == 0) { 
+			delete t;
+			return NOT_EXIST; 
+		}
+		int i = t->find(Key);
+		if (i == NOT_EXIST) {
+			delete t;
+			return NOT_EXIST;
+		}
+		i = t->Ptrs[i];
+		delete t;
+		return i;
 	}
 
 	/*批量查找，给出最大值与最小值*/
-	void findBetween(string min, string max, list<int>& results) {
+	void findBetween(string min, string max, vector<int>& results) {
 		if (rootPtr == NOT_EXIST)return;
 
+		bool include = false;
+
 		string s2 = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
-		int size = atoi(s2.c_str);
+		int size = atoi(s2.c_str());
 		string s = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
-		Node* t = &(Node)s;
+		Node nod = s;
+		Node* t = &nod;
 
 		if (min.empty()) {
 			min = getMin(t);
 		}
-		Leaf* t = &findInLeaf(min);
+		t = findInLeaf(min);
+		Leaf t2 = *t;
+		delete t;
+		t = &t2;
+		
 		int Order = t->getInsertPosition(min);
 		string maxbored = max;
 		if (!max.empty()) {
-			Leaf* end = &findInLeaf(max);
+			Leaf* end = findInLeaf(max);
 			int ord = end->getInsertPosition(max);
-			maxbored = end->Keys[ord];
+			if (ord == 0)include = true;
+			ord--;
+			maxbored = end->Keys[ord + include];
+			if (maxbored != max)include = true;
+			delete end;
 		}
 		int i;
 		int Ptr;
@@ -523,7 +621,8 @@ public:
 			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
 			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
-			t = &(Leaf)s;
+			Leaf tl = (Node)s;
+			t = &tl;
 			for (i = 0; i < t->num; i++) {
 				Key = t->Keys[i];
 				Ptr = t->Ptrs[i];
@@ -531,14 +630,13 @@ public:
 				results.push_back(Ptr);
 			}
 		}
-
-		if (Key == max)results.push_back(Ptr);
+		if (include)results.push_back(Ptr);
 
 		return;
 	}
 
 	/*插入一条记录*/
-	bool insertRecord(string Key, int Ptr) {
+	bool insertRecord(string& Key,int Ptr) {
 		if (rootPtr == NOT_EXIST) {					//index新建立，无节点
 			int offset = Buf.insertBlock((indexName + ".index"), (string)"0   ");
 			Leaf t;
@@ -553,11 +651,22 @@ public:
 			ss << size;
 			string s2;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), offset, 0, s2);
 			Buf.changeValue((indexName + ".index"), offset, 5, s);
+			ss.clear();
+			ss << Node::Type << ' ' << rootPtr;
+			char ch[256];
+			ss.getline(ch, 256);
+			s = ch;
+			s += " ";
+			Buf.changeValue((indexName + ".index"), 0, 0, s);
 			return true;
 		}
-		Node* t = &findInLeaf(Key);
+		Node* t = findInLeaf(Key);
+		Leaf t2 = *t;
+		delete t;
+		t = &t2;
 		banch r;
 		while (t->isFull() && t->selfPtr != rootPtr) {		//节点已满，分裂
 			Node* New;
@@ -582,14 +691,16 @@ public:
 			stringstream ss;
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), offset, 0, s2);
 			Buf.changeValue((indexName + ".index"), offset, 5, s);
 
 			s = *t;
-			int size = s.length();
+			size = s.length();
 			ss.clear();
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, s2);
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 5, s);
 
@@ -600,17 +711,19 @@ public:
 			s2 = Buf.getValue((indexName + ".index"), Ptr, 0, 5);
 			size = atoi(s2.c_str());
 			s = Buf.getValue((indexName + ".index"), Ptr, 5, 5 + size);
+			Ptr = New->selfPtr;
 			r = (Node)s;
 			t = &r;
 			delete New;
 		}
 
 		if (t->isFull() && t->selfPtr == rootPtr) {
+			banch r2;
 			int offset0 = Buf.insertBlock((indexName + ".index"), (string)"0    ");
-			r.selfPtr = offset0;
-			r.Parent = NOT_EXIST;
+			r2.selfPtr = offset0;
+			r2.Parent = NOT_EXIST;
 			rootPtr = offset0;
-			t->Parent = r.selfPtr;
+			t->Parent = r2.selfPtr;
 			Node* New;
 			int offset = Buf.insertBlock((indexName + ".index"), (string)"0   ");
 			if (t->isLeaf) {
@@ -625,10 +738,10 @@ public:
 			}
 			New->Parent = t->Parent;
 			split(t, Key, Ptr, New);
-			r.Ptrs[0] = t->selfPtr;
-			r.Ptrs[1] = New->selfPtr;
-			r.Keys[0] = getMin(New);
-			r.num = 1;
+			r2.Ptrs[0] = t->selfPtr;
+			r2.Ptrs[1] = New->selfPtr;
+			r2.Keys[0] = getMin(New);
+			r2.num = 1;
 
 			/*写回*/
 			string s = *New;
@@ -637,6 +750,7 @@ public:
 			stringstream ss;
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), offset, 0, s2);
 			Buf.changeValue((indexName + ".index"), offset, 5, s);
 
@@ -645,16 +759,26 @@ public:
 			ss.clear();
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, s2);
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 5, s);
 
-			s = r;
+			s = r2;
 			size = s.length();
 			ss.clear();
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset0, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), offset0, 0, s2);
 			Buf.changeValue((indexName + ".index"), offset0, 5, s);
+
+			ss.clear();
+			ss << Node::Type << ' ' << rootPtr;
+			char ch[256];
+			ss.getline(ch, 256);
+			s = ch;
+			s += " ";
+			Buf.changeValue((indexName + ".index"), 0, 0, s);
 
 			delete New;
 			return true;
@@ -668,6 +792,7 @@ public:
 			stringstream ss;
 			ss << size;
 			ss >> s2;
+			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, (string)"    ");
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 0, s2);
 			Buf.changeValue((indexName + ".index"), t->selfPtr, 5, s);
 
@@ -677,9 +802,14 @@ public:
 	}
 
 	/*删除一条记录*/
-	bool deleteRecord(string Key) {
+	bool deleteRecord(string& Key) {
 		if (rootPtr == NOT_EXIST)return false;
-		Node* t = &findInLeaf(Key);
+		Node* t = findInLeaf(Key);
+		Leaf nol;
+		banch nob, child, Prt, nob2;
+		Leaf t2 = *t;
+		delete t;
+		t = &t2;
 		if (t->num == 0)return false;
 		bool Update=false;
 		string UpdateKey;
@@ -693,24 +823,28 @@ public:
 		Node *Left, *Right;
 		while(t->isLess()&&t->selfPtr!=rootPtr) {						//节点记录数太少
 			int offset = t->Parent;
-			Block* ParB = *Buf.findBlockInBuffer((indexName + ".index"), offset);
-			string s2 = ParB->getContent(0, 4);
+			//*Buf.findBlockInBuffer((indexName + ".index"), offset);
+			//string s2 = ParB->getContent(0, 4);
+			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = ParB->getContent(5, 5 + size);
-			banch Prt = (Node)s;
+			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			Prt = (Node)s;
 			order = Prt.find(t->selfPtr);
 			if (order == 0) {
-				offset = Prt.Ptrs[1];
-				Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
-				s = Sib->getContent(0, 4);
+				int offset1 = Prt.Ptrs[1];
+				//Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
+				//s = Sib->getContent(0, 4);
+				string s = Buf.getValue((indexName + ".index"), offset1, 0, 4);
 				size = atoi(s.c_str());
-				s = Sib->getContent(5, 5 + size);
+				s = Buf.getValue((indexName + ".index"), offset1, 5, 5 + size);
 				Node t2(s);
 				if (t2.isLeaf) {
-					Right = &(Leaf)t2;
+					nol = t2;
+					Right = &nol;
 				}
 				else {
-					Right = &(banch)t2;
+					nob = t2;
+					Right = &nob;
 				}
 				Left = t;
 				if (Right->num <= (N - 1) / 2) {
@@ -721,12 +855,14 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
+					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, (string)"    ");
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, s2);
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 5, s);
 
 					Buf.deleteBlock((indexName + ".index"), Right->selfPtr);
 					Prt.deleteRecord(1);
-					t = &Prt;
+					nob2 = Prt;
+					t = &nob2;
 				}
 				else {
 					balanceNode(Left, Right);
@@ -736,6 +872,7 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
+					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, (string)"    ");
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, s2);
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 5, s);
 
@@ -744,8 +881,11 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
-					Sib->changeContent(0, s2);
-					Sib->changeContent(5, s);
+					//Sib->changeContent(0, s2);
+					Buf.changeValue((indexName + ".index"), offset1, 0, (string)"    ");
+					Buf.changeValue((indexName + ".index"), offset1, 0, s2);
+					//Sib->changeContent(5, s);
+					Buf.changeValue((indexName + ".index"), offset1, 5, s);
 
 					Prt.Keys[0] = getMin(Right);
 					s = Prt;
@@ -753,25 +893,33 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
-					ParB->changeContent(0, s2);
-					ParB->changeContent(5, s);
+					//ParB->changeContent(0, s2);
+					Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
+					Buf.changeValue((indexName + ".index"), offset, 0, s2);
+					//ParB->changeContent(5, s);
+					Buf.changeValue((indexName + ".index"), offset, 5, s);
 
-					t = &Prt;
+					nob2 = Prt;
+					t = &nob2;
 					break;
 				}
 			}
 			else {
-				offset = Prt.Ptrs[order - 1];
-				Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
-				s = Sib->getContent(0, 4);
+				int offset1 = Prt.Ptrs[order - 1];
+				//Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
+				//s = Sib->getContent(0, 4);
+				s = Buf.getValue((indexName + ".index"), offset1, 0, 4);
 				size = atoi(s.c_str());
-				s = Sib->getContent(5, 5 + size);
+				//s = Sib->getContent(5, 5 + size);
+				s = Buf.getValue((indexName + ".index"), offset1, 5, 5 + size);
 				Node t2(s);
 				if (t2.isLeaf) {
-					Left = &(Leaf)t2;
+					nol = t2;
+					Left = &nol;
 				}
 				else {
-					Left = &(banch)t2;
+					nob = t2;
+					Left = &nob;
 				}
 				Right = t;
 				if (Left->num <= (N - 1) / 2) {
@@ -782,12 +930,14 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
+					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, (string)"    ");
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 0, s2);
 					Buf.changeValue((indexName + ".index"), Left->selfPtr, 5, s);
 
 					Buf.deleteBlock((indexName + ".index"), Right->selfPtr);
-					Prt.deleteRecord(1);
-					t = &Prt;
+					Prt.deleteRecord(order);
+					nob2 = Prt;
+					t = &nob2;
 					Update = false;
 				}
 				else {
@@ -798,6 +948,7 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
+					Buf.changeValue((indexName + ".index"), Right->selfPtr, 0, (string)"    ");
 					Buf.changeValue((indexName + ".index"), Right->selfPtr, 0, s2);
 					Buf.changeValue((indexName + ".index"), Right->selfPtr, 5, s);
 
@@ -806,8 +957,11 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
-					Sib->changeContent(0, s2);
-					Sib->changeContent(5, s);
+					//Sib->changeContent(0, s2);
+					Buf.changeValue((indexName + ".index"), offset1, 0, (string)"    ");
+					Buf.changeValue((indexName + ".index"), offset1, 0, s2);
+					//Sib->changeContent(5, s);
+					Buf.changeValue((indexName + ".index"), offset1, 5, s);
 
 					Prt.Keys[0] = getMin(Right);
 					s = Prt;
@@ -815,8 +969,11 @@ public:
 					ss.clear();
 					ss << size;
 					ss >> s2;
-					ParB->changeContent(0, s2);
-					ParB->changeContent(5, s);
+					//ParB->changeContent(0, s2);
+					Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
+					Buf.changeValue((indexName + ".index"), offset, 0, s2);
+					//ParB->changeContent(5, s);
+					Buf.changeValue((indexName + ".index"), offset, 5, s);
 
 					Update = false;
 					break;
@@ -824,10 +981,55 @@ public:
 			}
 		}
 
-	
-		int offset = t->selfPtr;
-		string s = *t;
-		int size = s.length();
+		if (t->selfPtr == rootPtr&&t->num == 0 && t->isLeaf == false) {		//根节点太少，删除
+			Node* child;
+			int offset = t->Ptrs[0];
+			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			int size = atoi(s2.c_str());
+			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			Node no(s);
+			if (no.isLeaf) {
+				nol = no;
+				child = &nol;
+			}
+			else {
+				nob = no;
+				child = &nob;
+			}
+			child->Parent = NOT_EXIST;
+			rootPtr = child->selfPtr;
+			Buf.deleteBlock((indexName + ".index"), t->selfPtr);
+
+			/*写回*/
+			s = *child;
+			size = s.length();
+			stringstream ss;
+			ss << size;
+			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
+			Buf.changeValue((indexName + ".index"), offset, 0, s2);
+			Buf.changeValue((indexName + ".index"), offset, 5, s);
+
+			ss.clear();
+			ss << Node::Type << ' ' << rootPtr;
+			char ch[256];
+			ss.getline(ch, 256);
+			s = ch;
+			s += " ";
+			Buf.changeValue((indexName + ".index"), 0, 0, s);
+		}
+		else {
+			int offset = t->selfPtr;
+			string s = *t;
+			int size = s.length();
+			stringstream ss;
+			ss << size;
+			string s2;
+			ss >> s2;
+			Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
+			Buf.changeValue((indexName + ".index"), offset, 0, s2);
+			Buf.changeValue((indexName + ".index"), offset, 5, s);
+		}
 
 		while (Update&&t->selfPtr != rootPtr) {
 			int offset = t->Parent;
@@ -844,13 +1046,15 @@ public:
 				stringstream ss;
 				ss << size;
 				ss >> s2;
+				Buf.changeValue((indexName + ".index"), offset, 0, (string)"    ");
 				Buf.changeValue((indexName + ".index"), offset, 0, s2);
 				Buf.changeValue((indexName + ".index"), offset, 5, s);
 
 				Update = false;
 			}
 			else {
-				t = &Par;
+				child = Par;
+				t = &child;
 			}
 		}
 
@@ -862,7 +1066,7 @@ public:
 class IndexManager {
 public:
 	/*新建一个索引*/
-	BPlusTree createIndex(string IndexName, string table, string attribute, int type) {
+	BPlusTree createIndex(string& IndexName,const int& type) {
 		//TODO: 更新index catalog
 
 		BPlusTree bpt;
@@ -871,43 +1075,45 @@ public:
 	}
 
 	/*打开已有索引*/
-	BPlusTree openIndex(string IndexName) {
+	BPlusTree openIndex(string& IndexName) {
 		BPlusTree bpt;
 		bpt.OpenIndex(IndexName);
 		return bpt;
 	}
 
 	/*插入一条记录及其指针*/
-	bool insertRecord(string IndexName, string key, int ptr) {
+	bool insertRecord(string& IndexName, string& key,const int& ptr) {
 		BPlusTree bpt;
 		bpt.OpenIndex(IndexName);
 		return bpt.insertRecord(key, ptr);
 	}
 
 	/*删除一条记录*/
-	bool deleteRecord(string IndexName, string key) {
+	bool deleteRecord(string& IndexName, string& key) {
 		BPlusTree bpt;
 		bpt.OpenIndex(IndexName);
 		return bpt.deleteRecord(key);
 	}
 
 	/*查找一个记录的指针，返回-1表示记录不存在*/
-	int find(string IndexName, string key) {
+	int find(string& IndexName, string& key) {
 		BPlusTree bpt;
 		bpt.OpenIndex(IndexName);
 		return bpt.find(key);
 	}
 
 	/*区间查找，给定最小值最大值与一个空list，返回区间内的值（闭区间，可能包括最大与最小），单边查询请将另一边边界设为空字符串（""）*/
-	void findBetween(string IndexName, string min, string max, list<int>& results) {
+	void findBetween(string& IndexName, string& min, string& max, vector<int>& results) {
 		BPlusTree bpt;
+
 		bpt.OpenIndex(IndexName);
-		bpt.findBetween(min, max, results);
+		string tmin = min, tmax = max;
+		bpt.findBetween(tmin, tmax, results);
 		return;
 	}
 
 	/*删除索引*/
-	void dropIndex(string IndexName) {
+	void dropIndex(string& IndexName) {
 		Buf.dropFile((IndexName + ".index"));
 	}
 };

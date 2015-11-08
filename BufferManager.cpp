@@ -80,12 +80,12 @@ void BufferManager::readFile(const std::string& fileName)
 	int blockNum; int n;
 	if ((n = fileName.find(".table", 0)) != std::string::npos)
 	{
-		Table* tablePtr = catalog.getTablePtr(fileName.substr(0,n));
+		Table* tablePtr = Cat.getTablePtr(fileName.substr(0,n));
 		blockNum = tablePtr->blockNum;
 	}
 	if ((n = fileName.find(".index", 0)) != std::string::npos)
 	{
-		Index* indexPtr = catalog.getIndexPtr(fileName.substr(0, n));
+		Index* indexPtr = Cat.getIndexPtr(fileName.substr(0, n));
 		blockNum = indexPtr->blockNum;
 	}
 	std::list<Block*>::iterator it;
@@ -107,17 +107,18 @@ void BufferManager::writeFileBlock(const std::string& fileName, int blockOffset)
 }
 void BufferManager::writeFile(const std::string& fileName)
 {
-	std::fstream fileOut(fileName, std::ios::out);
-	fileOut.seekp(0, std::ios::end);
-	std::ios::pos_type ss = fileOut.tellp();
-	int fileSize = (int)ss;
-	fileOut.close();
+	int blockNum; int n;
+	if ((n = fileName.find(".table", 0)) != std::string::npos)
+	{
+		Table* tablePtr = Cat.getTablePtr(fileName.substr(0, n));
+		blockNum = tablePtr->blockNum;
+	}
+	if ((n = fileName.find(".index", 0)) != std::string::npos)
+	{
+		Index* indexPtr = Cat.getIndexPtr(fileName.substr(0, n));
+		blockNum = indexPtr->blockNum;
+	}
 
-	int blockNum;
-	if (fileSize%BLOCK_SIZE != 0)
-		blockNum = fileSize / BLOCK_SIZE + 1;
-	else
-		blockNum = fileSize / BLOCK_SIZE;
 	for (int i = 0; i < blockNum; i++)
 		writeFileBlock(fileName, i);
 }
@@ -150,40 +151,40 @@ std::list<Block*>::iterator BufferManager::findBlockInBuffer(const std::string f
 	return it;
 }
 
-std::string BufferManager::getValue(const std::string& fileName, int blockOffset, int start, int end)
+std::string BufferManager::getRecord(const std::string& fileName, int blockOffset, int start)
 {
-	std::list<Block*>::iterator it = findBlockInBuffer(fileName, blockOffset);
-	if (it != fullBuffer.end())
+	int n = fileName.find(".table",0);
+	Table* tablePtr = Cat.getTablePtr(fileName.substr(0, n));
+	
+	std::list<Block*>::iterator it = readFileBlock(fileName, blockOffset);
+	std::string record = "";
+	if (start + tablePtr->recordSize > BLOCK_SIZE)
 	{
-		std::string s = (*it)->getContent(start, end);
-		fullBuffer.push_front((*it));
-		fullBuffer.erase(it);
-		return s;
+		int length1 = BLOCK_SIZE - start;
+		int length2 = tablePtr->recordSize - length1;
+		for (int i = 0; i < length1; i++)
+			record += (*it)->content[start + i];
+		it = readFileBlock(fileName, blockOffset+1);
+		for (int i = 0; i < length2; i++)
+			record += (*it)->content[i];
 	}
 	else
-	{
-		std::list<Block*>::iterator it = readFileBlock(fileName, blockOffset);
-		return (*it)->getContent(start, end);
-	}
+		for (int i = 0; i < tablePtr->recordSize; i++)
+			record += (*it)->content[i+start];
+	return record;
 }
-/*		没有用？？？
-std::string BufferManager::getValue(std::string& fileName, int blockOffset, int position)
+std::string BufferManager::getBlock(const std::string& fileName, int blockOffset)
 {
-	std::list<Block*>::iterator it = findBlockInBuffer(fileName, blockOffset);
-	if (it != fullBuffer.end())
-	{
-		std::string s = (*it)->getContent(position);
-		fullBuffer.push_front((*it));
-		fullBuffer.erase(it);
-		return s;
-	}
-	else
-	{
-		std::list<Block*>::iterator it = readFileBlock(fileName, blockOffset);
-		return (*it)->getContent(position);
-	}
+	int n = fileName.find(".index", 0);
+	Index *indexPtr = Cat.getIndexPtr(fileName.substr(0, n));
+
+	std::list<Block*>::iterator it = readFileBlock(fileName, blockOffset);
+	std::string record = "";
+	for (int i = 0; i < BLOCK_SIZE; i++)
+		record += (*it)->content[i];
+	return record;
 }
-*/
+
 void BufferManager::changeValue(const std::string& fileName, int blockOffset, int start, std::string& c)
 {
 	std::list<Block*>::iterator it = findBlockInBuffer(fileName, blockOffset);
@@ -256,7 +257,7 @@ void BufferManager::deleteRecord(const std::string& fileName, int blockOffset, i
 	int n = fileName.find(".table",0);
 	std::string tableName = fileName.substr(0, n);
 
-	Table* tablePtr = catalog.getTablePtr(tableName);
+	Table* tablePtr = Cat.getTablePtr(tableName);
 	std::string ss = "";
 	for (int i = 0; i < tablePtr->recordSize; i++)
 		ss += '\0';
@@ -276,12 +277,13 @@ void BufferManager::deleteRecord(const std::string& fileName, int blockOffset, i
 	int recordOffset = (blockOffset*BLOCK_SIZE + start) / tablePtr->recordSize;
 	tablePtr->emptyRecordOffset.push_back(recordOffset);
 }
+
 void BufferManager::deleteBlock(const std::string &fileName, int blockOffset)//给indexManager
 {
 	int n = fileName.find(".index", 0);
 	std::string indexName = fileName.substr(0, n);
 
-	std::vector<Index*>::iterator indexPtr = catalog.findIndex(indexName);
+	std::vector<Index*>::iterator indexPtr = Cat.findIndex(indexName);
 	std::string ss = "";
 	for (int i = 0; i < BLOCK_SIZE; i++)
 		ss += '\0';
@@ -304,7 +306,7 @@ int BufferManager::insertRecord(const std::string& fileName, const std::string& 
 {
 	int n = fileName.find(".table", 0);
 	std::string tableName = fileName.substr(0, fileName.size()-6);
-	Table* tablePtr = catalog.getTablePtr(tableName);
+	Table* tablePtr = Cat.getTablePtr(tableName);
 
 	std::list<Block*>::iterator it;
 
@@ -330,8 +332,9 @@ int BufferManager::insertRecord(const std::string& fileName, const std::string& 
 	}
 	else//有空位
 	{
-		int recordOffset = tablePtr->emptyRecordOffset.back();
-		tablePtr->emptyRecordOffset.pop_back();
+		int recordOffset = *((tablePtr->emptyRecordOffset).begin());
+		(tablePtr->emptyRecordOffset).erase((tablePtr->emptyRecordOffset).begin());
+
 		int blockOffset = (recordOffset*tablePtr->recordSize) / BLOCK_SIZE;
 		int start = (recordOffset*tablePtr->recordSize) % BLOCK_SIZE;
 		it = readFileBlock(fileName, blockOffset);
@@ -375,7 +378,7 @@ int BufferManager::insertBlock(const std::string &fileName, const std::string& c
 {
 	int n = fileName.find(".index", 0);
 	std::string indexName = fileName.substr(0, n);
-	Index* indexPtr = catalog.getIndexPtr(indexName);
+	Index* indexPtr = Cat.getIndexPtr(indexName);
 
 	std::list<Block*>::iterator it;
 
