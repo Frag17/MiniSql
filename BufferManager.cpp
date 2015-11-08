@@ -173,14 +173,14 @@ std::string BufferManager::getRecord(const std::string& fileName, int blockOffse
 			record += (*it)->content[i+start];
 	return record;
 }
-std::string BufferManager::getBlock(const std::string& fileName, int blockOffset)
+std::stristd::string BufferManager::getBlock(const std::string& fileName, int blockOffset,int start,int end)
 {
 	int n = fileName.find(".index", 0);
 	Index *indexPtr = Cat.getIndexPtr(fileName.substr(0, n));
 
 	std::list<Block*>::iterator it = readFileBlock(fileName, blockOffset);
 	std::string record = "";
-	for (int i = 0; i < BLOCK_SIZE; i++)
+	for (int i = start; i < end; i++)
 		record += (*it)->content[i];
 	return record;
 }
