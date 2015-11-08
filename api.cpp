@@ -313,6 +313,8 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 		else {
 			itc->attributeOrder = i;
 			itc->type = pat->type;
+			string st = singleCheck(itc->value, itc->type);
+			if (st != "")return "查询失败，" + st;
 			itc++;
 		}
 	}
@@ -514,5 +516,141 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 		printf("\n");
 	}
 	return "";
+}
+
+string api::Del(string tableName, vector<Condition>& conditions){
+	if (Cat.existTable(tableName) == false)return "查询失败：找不到表" + tableName;
+	Table* tab = *Cat.findTable(tableName);
+	
+	int primarykeyOrder;
+	while (itc != conditions.end()) {
+		vector<Attribute>::iterator pat;
+		int i;
+		for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
+			if (pat->name == itc->attributeName)break;
+		}
+		if (pat == tab->attributes.end())return "查询失败，未找到属性" + itc->attributeName;
+		itc->attributeOrder = i;
+		itc->type = pat->type;
+		string st = singleCheck(itc->value, itc->type);
+		if (st != "")return "查询失败，" + st;
+		if(pat->isPrimaryKey==true)primarykeyOrder = i;
+		itc++;
+	}
+	
+	int n;
+	vector<string> KeytoDel;
+	SingleData dat;
+	Data data;
+	if(conditions.size()==1&&conditions[0].attributeOrder==primarykeyOrder){			//只有一个条件且限定primarykey 
+		Rec.selectAttribute(*tab, primarykeyOrder, dat, vector<int>());
+		for(vector<string>::iterator itdat=dat.begin();itdat!=dat.end();){
+			int cmp=datacmp(*itdat, conditions[0].value, conditions[0].type);
+		 	if (conditions[0].op < GT) {
+				if (conditions[0].op == EQ) {
+					if (cmp != 0) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+				else if (conditions[0].op == NE) {
+					if (cmp == 0) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+				else {
+					if (cmp != -1) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+			}
+			else {
+				if (conditions[0].op == GT) {
+					if (cmp != 1) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+				else if (conditions[0].op == LE) {
+					if (cmp == 1) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+				else {
+					if (cmp == -1) {
+						itdat = dat.erase(itdat);
+						continue;
+					}
+				}
+			}
+			
+			itdat++;
+		}
+	}
+	else if(conditions.size()==0){
+		Rec.selectAttribute(*tab, primarykeyOrder, dat, vector<int>());
+	}
+	else{
+		Data data;
+		Rec.selectRecord(*tab, data);
+		for(vector<Tuple>::iterator itd=data.begin();itd!=data.end();itd++){
+			for(vector<Condition>::iterator itc=conditions.begin();itc!=conditions.end();itc++){
+				int cmp = datacmp((*itc)[itc->attributeOrder], itc->value, itc->type);
+				if (itc->op < GT) {
+					if (itc->op == EQ) {
+						if (cmp == 0) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+					else if (itc->op == NE) {
+						if (cmp != 0) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+					else {
+						if (cmp == -1) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+				}
+				else {
+					if (itc->op == GT) {
+						if (cmp == 1) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+					else if (itc->op == LE) {
+						if (cmp != 1) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+					else {
+						if (cmp != -1) {
+							dat.push_back((*itd)[primaryKeyOrder]);
+							break;
+						}
+					}
+				}
+ 			}
+		}
+	}
+	
+	n = dat.size();
+	Rec.deleteByPrimaryKey(*tab, dat);
+	stringstream ss;
+	ss<<n;
+	string t;
+	ss>>t;
+	t+="行受影响";
+	t="删除成功，"+t; 
+	return t;
 }
 
