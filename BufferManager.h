@@ -105,8 +105,8 @@ public:
 
 	//得到文件中某一块中某处的内容。返回该内容组成的字符串
 	std::string getRecord(const std::string& fileName, int blockOffset, int start);
-	//得到文件中一个块的内容。返回该内容组成的字符串
-	std::string getBlock(const std::string& fileName, int blockOffset);
+	//得到文件中一个块的部分内容。返回该内容组成的字符串
+	std::string getBlock(const std::string& fileName, int blockOffset,int start,int end);
 
 	//改变文件中的值。start是在block中想要改变的起始位置，字符串是要改变成的内容
 	void changeValue(const std::string& fileName, int blockOffset, int start, std::string& c);
