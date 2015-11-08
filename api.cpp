@@ -73,6 +73,7 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 					lt.indexName=inname;
 					lt.tableName=tabname;
 					lt.attribute = Cat.tables[i]->attributes[j];
+					lt.blockNum = 0;
 					Cat.createIndex(lt);
 					Ind.createIndex(inname, Cat.tables[i]->attributes[j].type);
 					vector <int>Recpoint;
