@@ -6,7 +6,6 @@ extern RecordManager Rec;
 extern CatalogManager Cat;
 string api::CreateTable(Table t)
 {
-	blockNum;
 	int recordSize;
 	t.blockNum=0;
 	t.recordSize=0;
@@ -26,8 +25,8 @@ string api::CreateTable(Table t)
 	for (int i = 0; i < Cat.tables.size(); i++)
 		if (Cat.tables[i]->tableName == t.tableName)
 			return "Table " + t.tableName + " already exists!!";
- 	Cat.createTable(&t);
- 	Rec.createTable(t.tableName);
+ 	Cat.createTable(t);
+ 	Rec.createTable(t);
  	for(int i=0;i<t.attributes.size();i++)
 		if(t.attributes[i].isPrimaryKey==1)
 			return CreateIndex(t.tableName+"_"+t.attributes[i].name,t.tableName,t.attributes[i].name);
@@ -75,13 +74,13 @@ string api::CreateIndex(string inname,string tabname,string arrname)
 					Cat.tables[i]->attributes[j].indexName=inname;
 					lt.indexName=inname;
 					lt.tableName=tabname;
-					lt.attribute=arrname;
+					lt.attribute = Cat.tables[i]->attributes[j];
 					Cat.createIndex(lt);
-					Ind.createIndex(inname,tabname,arrname,Cat.tables[i]->attributes[j].type);
+					Ind.createIndex(inname, Cat.tables[i]->attributes[j].type);
 					vector <int>Recpoint;
 					SingleData Recattr;
-					Rec.selectAttribute(Cat.tables[i],j,Recattr,Recpoint);
-					for(int k=0;k<Recattr.size());k++)
+					Rec.selectAttribute(*Cat.tables[i],j,Recattr,Recpoint);
+					for(int k=0;k<Recattr.size();k++)
 						Ind.insertRecord(inname,Recattr[k],Recpoint[k]);
 					return "";
 				}
@@ -171,18 +170,43 @@ string api::nameCheck(string name) {
 	return "";
 }
 
+int api::datacmp(const string& Lstr, const string& Rstr, const int& type) {
+	int l, r;
+	float fll, flr;
+	switch (type) {
+	case CHAR:
+		if (Lstr < Rstr)return -1;
+		if (Lstr == Rstr)return 0;
+		return 1;
+	case INT:
+		l = atoi(Lstr.c_str());
+		r = atoi(Rstr.c_str());
+		if (l < r)return -1;
+		if (l == r)return 0;
+		return 1;
+	case FLOAT:
+		fll = atof(Lstr.c_str());
+		flr = atof(Rstr.c_str());
+		if (fll < flr)return -1;
+		if (fll == flr)return 0;
+		return 1;
+	default:
+		return -2;
+	}
+}
+
 string api::insert(string tableName, Tuple& tup) {
 	if (Cat.existTable(tableName) == false)return "插入失败：找不到表" + tableName;
 	Table* tab = *Cat.findTable(tableName);
 	/*if (tab == nullptr) {
-		cout << "插入失败：找不到表" + tableName;
-		return;
+	cout << "插入失败：找不到表" + tableName;
+	return;
 	}*/
 	Tuple ne;
 	string s = typeCheck(tup, tab->attributes, ne);
 	if (s != "") {
 		return "插入失败：" + s;
-		
+
 	}
 	vector<Attribute>* pattr = &tab->attributes;
 	vector<IndexInfo> hasindex;
@@ -190,7 +214,7 @@ string api::insert(string tableName, Tuple& tup) {
 	for (int i = 0; i < pattr->size(); i++) {
 		if ((*pattr)[i].isUnique) {
 			AttributeInfo att;
-			att.attribute = (*pattr)[i].name;
+			att.attribute = (*pattr)[i];
 			att.attributeOrder = i;
 			if ((*pattr)[i].hasIndex) {			//有index的unique，用index查询重复
 				IndexInfo indx;
@@ -207,17 +231,17 @@ string api::insert(string tableName, Tuple& tup) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		int i = pin->attribute.attributeOrder;
 		if (bpt.find(ne[i]) != -1) {
-			return "插入失败，属性" + pin->attribute.attribute + "值" + ne[i] + "重复";
+			return "插入失败，属性" + pin->attribute.attribute.name + "值" + ne[i] + "重复";
 		}
 	}
 	if (!isattr.empty()) {			//没有index的unique,遍历查询值重复
-		Data t;
+		SingleData t;
 		for (vector<AttributeInfo>::iterator pat = isattr.begin(); pat != isattr.end(); pat++) {
-			Rec.selectAttribute(*tab, pat->attributeOrder, t);
+			Rec.selectAttribute(*tab, pat->attributeOrder, t, vector<int>());
 			int i = pat->attributeOrder;
-			for (vector<Tuple>::iterator pstr = t.begin(); pstr != t.end(); pstr ++) {
-				if ((*pstr)[0] == ne[i]) {
-					return "插入失败，属性" + pat->attribute + "值" + ne[i] + "重复";
+			for (vector<string>::iterator pstr = t.begin(); pstr != t.end(); pstr++) {
+				if ((*pstr) == ne[i]) {
+					return "插入失败，属性" + pat->attribute.name + "值" + ne[i] + "重复";
 				}
 			}
 		}
@@ -238,7 +262,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 	if (attributes[0] == "*") {										//select*
 		for (vector<Attribute>::iterator pat = tab->attributes.begin(), int i = 0; pat != tab->attributes.end(); pat++, i++) {
 			AttributeInfo t;
-			t.attribute = pat->name;
+			t.attribute = *pat;
 			t.attributeOrder = i;
 			outputAttr.push_back(t);
 		}
@@ -250,7 +274,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
 				if (pat->name == *ptb) {
 					AttributeInfo t;
-					t.attribute = pat->name;
+					t.attribute = *pat;
 					t.attributeOrder = i;
 					outputAttr.push_back(t);
 					break;
@@ -261,7 +285,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 	}
 
 	struct ConditionWithIndex {
-		IndexInfo indx;
+		string indxnam;
 		int type;
 		Op op;
 		string value;
@@ -269,17 +293,16 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 	vector<ConditionWithIndex> CwIs;
 
 	vector<Condition>::iterator itc = conditions.begin();
-	while (itc!=conditions.end()) {
+	while (itc != conditions.end()) {
 		vector<Attribute>::iterator pat;
 		int i;
 		for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
-			if (pat->name == itc->attribute.attribute)break;
+			if (pat->name == itc->attributeName)break;
 		}
-		if (pat == tab->attributes.end())return "查询失败，未找到属性" + itc->attribute.attribute;
+		if (pat == tab->attributes.end())return "查询失败，未找到属性" + itc->attributeName;
 		if (pat->hasIndex) {			//分类，分为有index的条件查询与无index的条件查询
 			ConditionWithIndex t;
-			t.indx.IndexName = pat->indexName;
-			t.indx.attribute = itc->attribute;
+			t.indxnam = pat->indexName;
 			t.type = pat->type;
 			t.op = itc->op;
 			t.value = itc->value;
@@ -287,33 +310,211 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			if (st != "")return "查询失败，" + st;
 			CwIs.push_back(t);
 
-			conditions.erase(itc);
+			itc = conditions.erase(itc);
 		}
 		else {
-			itc->attribute.attributeOrder = i;
+			itc->attributeOrder = i;
 			itc->type = pat->type;
 			itc++;
 		}
 	}
 
+	/*查询条件有index的，优先用index*/
 	Data dat;
 	if (CwIs.size() == 0) {
 		Rec.selectRecord(*tab, dat);
 	}
 	else {
-		int n = CwIs.size();
 		vector<int> resPtrs, tPtrs;
 		int ptr;
-		vector<ConditionWithIndex>::iterator itcwi = CwIs.begin();
-		string indexName = itcwi->indx.IndexName;
+		vector<ConditionWithIndex>::iterator itcwi = CwIs.begin();	//先查询一个，然后查询后面的并做交集
+		string indexName = itcwi->indxnam;
 		switch (itcwi->op) {
-		case EQ:ptr = Ind.find(indexName, itcwi->value);
-			resPtrs.push_back(ptr);
+		case EQ:
+			ptr = Ind.find(indexName, itcwi->value);
+			if (ptr != NOT_EXIST)
+				resPtrs.push_back(ptr);
 			break;
-		case GT:Ind.findBetween(indexName, itcwi->value, "", resPtrs);
-
+		case NE:
+			Ind.findBetween(indexName, (string)"", (string)"", resPtrs);
+			ptr = Ind.find(indexName, itcwi->value);
+			if (ptr != -1) {
+				for (vector<int>::iterator itr = resPtrs.begin(); itr != resPtrs.end(); itr++) {
+					if (*itr == ptr) {
+						resPtrs.erase(itr);
+						break;
+					}
+				}
+			}
+			break;
+		case GT:
+			Ind.findBetween(indexName, itcwi->value, (string)"", resPtrs);
+			break;
+		case LT:
+			Ind.findBetween(indexName, (string)"", itcwi->value, resPtrs);
+			break;
+		case GE:
+			ptr = Ind.find(indexName, itcwi->value);
+			if (ptr != -1) {
+				resPtrs.push_back(ptr);
+			}
+			Ind.findBetween(indexName, itcwi->value, (string)"", resPtrs);
+			break;
+		case LE:
+			Ind.findBetween(indexName, (string)"", itcwi->value, resPtrs);
+			ptr = Ind.find(indexName, itcwi->value);
+			if (ptr != -1) {
+				resPtrs.push_back(ptr);
+			}
+			break;
 		}
+
+		for (; itcwi != CwIs.end(); itcwi++) {
+			indexName = itcwi->indxnam;
+			switch (itcwi->op) {
+			case EQ:
+				ptr = Ind.find(indexName, itcwi->value);
+				if (ptr != NOT_EXIST)
+					tPtrs.push_back(ptr);
+				break;
+			case NE:
+				Ind.findBetween(indexName, (string)"", (string)"", tPtrs);
+				ptr = Ind.find(indexName, itcwi->value);
+				if (ptr != -1) {
+					for (vector<int>::iterator itr = tPtrs.begin(); itr != tPtrs.end(); itr++) {
+						if (*itr == ptr) {
+							tPtrs.erase(itr);
+							break;
+						}
+					}
+				}
+				break;
+			case GT:
+				Ind.findBetween(indexName, itcwi->value, (string)"", tPtrs);
+				break;
+			case LT:
+				Ind.findBetween(indexName, (string)"", itcwi->value, tPtrs);
+				break;
+			case GE:
+				ptr = Ind.find(indexName, itcwi->value);
+				if (ptr != -1) {
+					tPtrs.push_back(ptr);
+				}
+				Ind.findBetween(indexName, itcwi->value, (string)"", tPtrs);
+				break;
+			case LE:
+				Ind.findBetween(indexName, (string)"", itcwi->value, tPtrs);
+				ptr = Ind.find(indexName, itcwi->value);
+				if (ptr != -1) {
+					tPtrs.push_back(ptr);
+				}
+				break;
+			}
+
+			/*合并两个指针，做交集*/
+			for (vector<int>::iterator itr = resPtrs.begin(); itr != resPtrs.end();) {
+				bool include = false;
+				for (vector<int>::iterator itt = tPtrs.begin(); itt != tPtrs.end();) {
+					if (*itt == *itr) {
+						itt = tPtrs.erase(itt);
+						include = true;
+						break;
+					}
+					else {
+						itt++;
+					}
+				}
+				if (include) {
+					itr++;
+				}
+				else {
+					itr = resPtrs.erase(itr);
+				}
+			}
+		}
+		/*得到data*/
+		Rec.selectByPointer(*tab, resPtrs, dat);
 	}
 
+	/*无index的条件*/
+	for (Data::iterator itdat = dat.begin(); itdat != dat.end(); ) {
+		for (itc = conditions.begin(); itc != conditions.end(); itc++) {
+			int order = itc->attributeOrder;
+			int cmp = datacmp((*itdat)[order], itc->value, itc->type);
+			if (itc->op < GT) {
+				if (itc->op == EQ) {
+					if (cmp != 0) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+				else if (itc->op == NE) {
+					if (cmp == 0) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+				else {
+					if (cmp != -1) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+			}
+			else {
+				if (itc->op == GT) {
+					if (cmp != 1) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+				else if (itc->op == LE) {
+					if (cmp == 1) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+				else {
+					if (cmp == -1) {
+						itdat = dat.erase(itdat);
+						break;
+					}
+				}
+
+			}
+		}
+		if (itc == conditions.end())itdat++;
+	}
+
+	/*select完成， 输出*/
+	for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
+		stringstream ss;
+		ss.clear();
+		ss << "%";
+		ss << itattr->attribute.length;
+		ss << "s";
+		string t;
+		ss >> t;
+		printf(t.c_str(), itattr->attribute.name.c_str());
+		itattr++;
+		if (itattr != outputAttr.end())
+			printf("|");
+	}
+	printf("\n");
+	for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
+		for (int i = 0; i < itattr->attribute.length; i++)printf("-");
+		if (itattr != outputAttr.end())
+			printf("|");
+	}
+	printf("\n");
+	for (Data::iterator itdat = dat.begin(); itdat != dat.end(); itdat++) {
+		for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
+			printf("%s", (*itdat)[itattr->attributeOrder]);
+			if (itattr != outputAttr.end())
+				printf("|");
+		}
+		printf("\n");
+	}
+	return "";
 }
 
