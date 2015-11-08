@@ -286,9 +286,9 @@ private:
 		}
 
 		int offset = nod->Ptrs[0];
-		string t = Buf.getValue((indexName + ".index"), offset, 0, 4);
+		string t = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 		int size = atoi(t.c_str());
-		t = Buf.getValue((indexName	+ ".index"), offset, 5, 5 + size);
+		t = Buf.getBlock((indexName	+ ".index"), offset, 5, 5 + size);
 		Node node(t);
 		return getMin(&node);
 	}
@@ -321,10 +321,10 @@ private:
 				/*将子节点Parent指针改变*/
 				Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
 				string t = bt->getContent(0, 4);
-				//string t = Buf.getValue((indexName + ".index"), P, 0, 4);
+				//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 				size = atoi(t.c_str());
 				t = bt->getContent(5, 5 + size);
-				//t = Buf.getValue((indexName + ".index"), P, 5, 5 + size);
+				//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 				Node child(t);
 				child.Parent = Left->selfPtr;
 				t = (string)child;
@@ -350,10 +350,10 @@ private:
 				/*将子节点Parent指针改变*/
 				Block* bt = *Buf.readFileBlock((indexName + ".index"), P2);
 				string t = bt->getContent(0, 4);
-				//string t = Buf.getValue((indexName + ".index"), P2, 0, 4);
+				//string t = Buf.getBlock((indexName + ".index"), P2, 0, 4);
 				size = atoi(t.c_str());
 				t = bt->getContent(5, 5 + size);
-				//string t = Buf.getValue((indexName + ".index"), P2, 5, 5 + size);
+				//string t = Buf.getBlock((indexName + ".index"), P2, 5, 5 + size);
 				Node child(t);
 				child.Parent = Right->selfPtr;
 				t = (string)child;
@@ -388,10 +388,10 @@ private:
 				/*将子节点Parent指针改变*/
 				Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
 				string t = bt->getContent(0, 4);
-				//string t = Buf.getValue((indexName + ".index"), P, 0, 4);
+				//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 				int size = atoi(t.c_str());
 				t = bt->getContent(5, 5 + size);
-				//t = Buf.getValue((indexName + ".index"), P, 5, 5 + size);
+				//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 				Node child(t);
 				child.Parent = Left->selfPtr;
 				t = (string)child;
@@ -418,10 +418,10 @@ private:
 			/*将子节点Parent指针改变*/
 			Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
 			string t = bt->getContent(0, 4);
-			//string t = Buf.getValue((indexName + ".index"), P, 0, 4);
+			//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 			int size = atoi(t.c_str());
 			t = bt->getContent(5, 5 + size);
-			//t = Buf.getValue((indexName + ".index"), P, 5, 5 + size);
+			//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 			Node child(t);
 			child.Parent = Left->selfPtr;
 			t = (string)child;
@@ -468,9 +468,9 @@ private:
 			New->Keys[0] = NewKey;
 			New->Ptrs[1] = NewP;
 			/**/
-			string s2 = Buf.getValue((indexName + ".index"), NewP, 0, 4);
+			string s2 = Buf.getBlock((indexName + ".index"), NewP, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = Buf.getValue((indexName + ".index"), NewP, 5, 5 + size);
+			string s = Buf.getBlock((indexName + ".index"), NewP, 5, 5 + size);
 			Node no = s;
 			no.Parent = New->selfPtr;
 			s = no;
@@ -486,9 +486,9 @@ private:
 			Old->deleteRecord(Old->num);
 			New->Ptrs[0] = NewP;
 			/**/
-			s2 = Buf.getValue((indexName + ".index"), NewP, 0, 4);
+			s2 = Buf.getBlock((indexName + ".index"), NewP, 0, 4);
 			size = atoi(s2.c_str());
-			s = Buf.getValue((indexName + ".index"), NewP, 5, 5 + size);
+			s = Buf.getBlock((indexName + ".index"), NewP, 5, 5 + size);
 			no = s;
 			no.Parent = New->selfPtr;
 			s = no;
@@ -510,17 +510,17 @@ private:
 	Leaf* findInLeaf(string& Key) {
 		if (rootPtr == NOT_EXIST)return new Leaf();
 		Node t;
-		string s = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
+		string s = Buf.getBlock((indexName + ".index"), rootPtr, 0, 4);
 		int size = atoi(s.c_str());
-		s = Buf.getValue((indexName + ".index"), rootPtr, 5, 5 + size);
+		s = Buf.getBlock((indexName + ".index"), rootPtr, 5, 5 + size);
 		t = s;
 		while (!(t.isLeaf)) {
 			int n = t.getInsertPosition(Key);
 			if (n < 0)return new Leaf();
 			int offset = t.Ptrs[n];
-			string s = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			string s = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s.c_str());
-			s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			s = Buf.getBlock((indexName + ".index"), offset, 5, 5 + size);
 			t = s;
 		}
 
@@ -551,7 +551,7 @@ public:
 	/*打开index*/
 	void OpenIndex(string& indexname) {
 		indexName = indexname;
-		string t = Buf.getValue((indexname + ".index"), 0, 0, 10);
+		string t = Buf.getBlock((indexname + ".index"), 0, 0, 10);
 		stringstream ss;
 		ss.clear();
 		ss << t;
@@ -582,21 +582,23 @@ public:
 
 		bool include = false;
 
-		string s2 = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
+		string s2 = Buf.getBlock((indexName + ".index"), rootPtr, 0, 4);
 		int size = atoi(s2.c_str());
-		string s = Buf.getValue((indexName + ".index"), rootPtr, 0, 4);
+		string s = Buf.getBlock((indexName + ".index"), rootPtr, 0, 4);
 		Node nod = s;
 		Node* t = &nod;
 
+		string minbored = min;
 		if (min.empty()) {
-			min = getMin(t);
+			minbored = getMin(t);
 		}
-		t = findInLeaf(min);
+		t = findInLeaf(minbored);
 		Leaf t2 = *t;
 		delete t;
 		t = &t2;
 		
-		int Order = t->getInsertPosition(min);
+		int Order = t->getInsertPosition(minbored);
+		if (min == "")Order--;
 		string maxbored = max;
 		if (!max.empty()) {
 			Leaf* end = findInLeaf(max);
@@ -618,9 +620,9 @@ public:
 		}
 		while (i >= t->num && t->Ptrs[N - 1] != NOT_EXIST) {
 			int offset = t->Ptrs[N - 1];
-			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			string s2 = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			string s = Buf.getBlock((indexName + ".index"), offset, 5, 5 + size);
 			Leaf tl = (Node)s;
 			t = &tl;
 			for (i = 0; i < t->num; i++) {
@@ -708,9 +710,9 @@ public:
 
 			Key = getMin(New);
 			Ptr = t->Parent;
-			s2 = Buf.getValue((indexName + ".index"), Ptr, 0, 5);
+			s2 = Buf.getBlock((indexName + ".index"), Ptr, 0, 5);
 			size = atoi(s2.c_str());
-			s = Buf.getValue((indexName + ".index"), Ptr, 5, 5 + size);
+			s = Buf.getBlock((indexName + ".index"), Ptr, 5, 5 + size);
 			Ptr = New->selfPtr;
 			r = (Node)s;
 			t = &r;
@@ -825,18 +827,18 @@ public:
 			int offset = t->Parent;
 			//*Buf.findBlockInBuffer((indexName + ".index"), offset);
 			//string s2 = ParB->getContent(0, 4);
-			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			string s2 = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			string s = Buf.getBlock((indexName + ".index"), offset, 5, 5 + size);
 			Prt = (Node)s;
 			order = Prt.find(t->selfPtr);
 			if (order == 0) {
 				int offset1 = Prt.Ptrs[1];
 				//Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
 				//s = Sib->getContent(0, 4);
-				string s = Buf.getValue((indexName + ".index"), offset1, 0, 4);
+				string s = Buf.getBlock((indexName + ".index"), offset1, 0, 4);
 				size = atoi(s.c_str());
-				s = Buf.getValue((indexName + ".index"), offset1, 5, 5 + size);
+				s = Buf.getBlock((indexName + ".index"), offset1, 5, 5 + size);
 				Node t2(s);
 				if (t2.isLeaf) {
 					nol = t2;
@@ -908,10 +910,10 @@ public:
 				int offset1 = Prt.Ptrs[order - 1];
 				//Block* Sib = *Buf.findBlockInBuffer((indexName + ".index"), offset);
 				//s = Sib->getContent(0, 4);
-				s = Buf.getValue((indexName + ".index"), offset1, 0, 4);
+				s = Buf.getBlock((indexName + ".index"), offset1, 0, 4);
 				size = atoi(s.c_str());
 				//s = Sib->getContent(5, 5 + size);
-				s = Buf.getValue((indexName + ".index"), offset1, 5, 5 + size);
+				s = Buf.getBlock((indexName + ".index"), offset1, 5, 5 + size);
 				Node t2(s);
 				if (t2.isLeaf) {
 					nol = t2;
@@ -963,7 +965,7 @@ public:
 					//Sib->changeContent(5, s);
 					Buf.changeValue((indexName + ".index"), offset1, 5, s);
 
-					Prt.Keys[0] = getMin(Right);
+					Prt.Keys[order - 1] = getMin(Right);
 					s = Prt;
 					size = s.length();
 					ss.clear();
@@ -984,9 +986,9 @@ public:
 		if (t->selfPtr == rootPtr&&t->num == 0 && t->isLeaf == false) {		//根节点太少，删除
 			Node* child;
 			int offset = t->Ptrs[0];
-			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			string s2 = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			string s = Buf.getBlock((indexName + ".index"), offset, 5, 5 + size);
 			Node no(s);
 			if (no.isLeaf) {
 				nol = no;
@@ -1033,9 +1035,9 @@ public:
 
 		while (Update&&t->selfPtr != rootPtr) {
 			int offset = t->Parent;
-			string s2 = Buf.getValue((indexName + ".index"), offset, 0, 4);
+			string s2 = Buf.getBlock((indexName + ".index"), offset, 0, 4);
 			int size = atoi(s2.c_str());
-			string s = Buf.getValue((indexName + ".index"), offset, 5, 5 + size);
+			string s = Buf.getBlock((indexName + ".index"), offset, 5, 5 + size);
 			banch Par = (Node)s;
 			order = Par.find(t->selfPtr);
 			if (order > 0) {

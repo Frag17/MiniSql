@@ -1,8 +1,8 @@
 #ifndef _Buffer_Manager_
 #define _Buffer_Manager_
 
-#define MAX_BLOCK_AMOUNT 5
-#define BLOCK_SIZE 20
+#define MAX_BLOCK_AMOUNT 100
+#define BLOCK_SIZE 4096
 #include<string>
 #include<list>
 #include<map>
