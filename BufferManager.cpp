@@ -1,5 +1,7 @@
 #include"StdAfx.h"
 
+extern CatalogManager Cat;
+
 void Block::readFile(const std::string& fileName, int blockOffset)
 {
 	initialize();

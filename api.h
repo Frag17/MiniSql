@@ -31,8 +31,8 @@ public:
 	string DropIndex(string inname);
 	string Select(string tableName, vector<string>& attributes, vector<Condition>& conditions);
 	//string Insert(string tabname,Tuple &v);
-	string Del();
-	string insert(string tableName, Tuple& tup);
+	//string Del();
+	string Insert(string tableName, Tuple& tup);
 private:
 	string singleCheck(string& value, int type);
 	string typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New);

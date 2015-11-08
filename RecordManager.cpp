@@ -80,7 +80,7 @@ void RecordManager::selectRecord(Table& table,Data &data)
 		while (start<BLOCK_SIZE)
 		{
 			if (blockOffset + 1 == table.blockNum && start + table.recordSize > BLOCK_SIZE)//已经在最后一个block，并且所在record跨block，则必为空
-				return;
+				break;
 			std::string record = Buf.getRecord(fileName, blockOffset, start);
 			if (record[0] != '\0')
 				tempData.push_back(record);
