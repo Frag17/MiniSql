@@ -3,11 +3,6 @@
 
 #define MAX_BLOCK_AMOUNT 100
 #define BLOCK_SIZE 4096
-#include<string>
-#include<list>
-#include<map>
-#include<vector>
-#include"CatalogManager.h"
 
 extern CatalogManager Cat;
 

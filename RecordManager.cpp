@@ -1,9 +1,4 @@
-#include"RecordManager.h"
-#include"CatalogManager.h"
-#include"BufferManager.h"
-#include<vector>
-#include<string>
-#include<fstream>
+#include"StdAfx.h"
 
 extern BufferManager Buf;
 extern CatalogManager Cat;

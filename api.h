@@ -1,7 +1,4 @@
-#include"RecordManager.h"
-#include"IndexManager.h"
-#include"CatalogManager.h"
-
+#pragma once
 
 enum Op {
 	EQ, NE, LT, GT, LE, GE
@@ -24,7 +21,6 @@ struct IndexInfo {
 	string IndexName;
 	AttributeInfo attribute;
 };
-
 
 class api
 {

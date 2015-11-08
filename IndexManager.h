@@ -1,9 +1,5 @@
 #pragma once
 
-#include"BufferManager.h"
-#include<sstream>
-using namespace std;
-
 #ifndef ORDER_NUMBER		//B+ tree²æÊý
 #define ORDER_NUMBER 13
 #endif

@@ -1,10 +1,5 @@
 #ifndef _Record_Manager_
 #define _Record_Manager_
-#include"CatalogManager.h"
-#include"BufferManager.h"
-
-#include<vector>
-#include<string>
 
 #define INTSIZE sizeof(int);
 #define CHARSIZE sizeof(char);

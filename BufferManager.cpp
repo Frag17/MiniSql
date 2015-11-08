@@ -1,7 +1,4 @@
-#include"BufferManager.h"
-#include<fstream>
-
-
+#include"StdAfx.h"
 
 void Block::readFile(const std::string& fileName, int blockOffset)
 {

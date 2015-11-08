@@ -1,12 +1,10 @@
-#include"api.h"
-#include"CatalogManager.h"
-using std::string;
+#include"StdAfx.h"
+
 extern IndexManager Ind;
 extern RecordManager Rec;
 extern CatalogManager Cat;
 string api::CreateTable(Table t)
 {
-	int recordSize;
 	t.blockNum=0;
 	t.recordSize=0;
 	
@@ -41,7 +39,7 @@ string api::DropTable(string name)
 				if(Cat.indexs[j]->tableName==name)
 					Ind.dropIndex(Cat.indexs[j]->indexName);
 			//Buf.dropFile((IndexName + ".index"));			不需要，index自己会删掉
-			Rec.dropTable(name);
+			Rec.dropTable(*Cat.tables[i]);
 			Cat.dropTable(name);
 			return 0; 
 		}
@@ -142,8 +140,7 @@ string api::typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New) {
 	vector<Attribute>::iterator pa;
 	stringstream ss;
 	for (pt = Old.begin(), pa = attr.begin(); pt != Old.end() && pa != attr.end(); pt++, pa++) {
-		int type = pa->type, in;
-		float fl;
+		int type = pa->type;
 		string s = *pt;
 		if (s.find('\t') != -1)return "'" + s + "'存在非法字符'\t'";
 		int length = pa->length;
@@ -151,7 +148,7 @@ string api::typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New) {
 		if (t != "")return t;
 		if (type == CHAR) {
 			if (s.length() > length)return "字符串'" + s + "'过长";
-			while (s.length < length)s += " ";
+			while (s.length() < length)s += " ";
 		}
 		New.push_back(s);
 	}
@@ -227,7 +224,7 @@ string api::insert(string tableName, Tuple& tup) {
 			}
 		}
 	}
-	for (vector<IndexInfo>::iterator pin = hasindex.begin(); pin != hasindex.end; pin++) {
+	for (vector<IndexInfo>::iterator pin = hasindex.begin(); pin != hasindex.end(); pin++) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		int i = pin->attribute.attributeOrder;
 		if (bpt.find(ne[i]) != -1) {
@@ -247,7 +244,7 @@ string api::insert(string tableName, Tuple& tup) {
 		}
 	}
 	int ptr = Rec.insertRecord(*tab, ne);
-	for (vector<IndexInfo>::iterator pin = hasindex.begin(); pin != hasindex.end; pin++) {
+	for (vector<IndexInfo>::iterator pin = hasindex.begin(); pin != hasindex.end(); pin++) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		bpt.insertRecord(ne[pin->attribute.attributeOrder], ptr);
 	}
@@ -259,8 +256,9 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 	Table* tab = *Cat.findTable(tableName);
 	vector<AttributeInfo> outputAttr;
 	/*保存需要输出的列的信息*/
-	if (attributes[0] == "*") {										//select*
-		for (vector<Attribute>::iterator pat = tab->attributes.begin(), int i = 0; pat != tab->attributes.end(); pat++, i++) {
+	if (attributes[0] == "*") {	//select*
+		int i = 0;
+		for (vector<Attribute>::iterator pat = tab->attributes.begin(); pat != tab->attributes.end(); pat++, i++) {
 			AttributeInfo t;
 			t.attribute = *pat;
 			t.attributeOrder = i;
@@ -509,7 +507,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 	printf("\n");
 	for (Data::iterator itdat = dat.begin(); itdat != dat.end(); itdat++) {
 		for (vector<AttributeInfo>::iterator itattr = outputAttr.begin(); itattr != outputAttr.end();) {
-			printf("%s", (*itdat)[itattr->attributeOrder]);
+			printf("%s", (*itdat)[itattr->attributeOrder].c_str());
 			if (itattr != outputAttr.end())
 				printf("|");
 		}
