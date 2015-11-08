@@ -1,10 +1,6 @@
 #ifndef _Catalog_Manager_
 #define _Catalog_Manager_
 
-#include<string>
-#include<vector>
-#include<map>
-
 #define CHAR 1
 #define INT 2
 #define FLOAT 3

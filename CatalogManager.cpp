@@ -1,6 +1,4 @@
-#include"CatalogManager.h"
-#include<string>
-#include<fstream>
+#include"StdAfx.h"
 
 CatalogManager::CatalogManager()
 {
