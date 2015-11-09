@@ -590,7 +590,6 @@ void interpreter::interpreter_begin(string filename)
 	char nt = 0;
 	while(scanf("%c", &nt)!=EOF)
 	{
-		cerr << filename << endl;
 		string command="";
 		do
 		{
