@@ -59,6 +59,9 @@ void attr(string lt1,string lt2,bool uni,string length,Attribute &v)
 {
 	v.name=lt1;
 	v.isUnique=uni;
+	v.hasIndex = 0;
+	v.indexName = "";
+	v.isPrimaryKey = 0;
 	if(lt2=="int")
 		v.type=2;
 	else if(lt2=="char")
@@ -277,32 +280,32 @@ void interpreter::select()
 			lt1=next_state();
 			if(lt1.find("<>")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<>"));
 			}
 			else if(lt1.find("<=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<="));
 			}
 			else if(lt1.find(">=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">="));
 			}
 			else if(lt1.find("=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("="));
 			}
 			else if(lt1.find(">")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">"));
 			}
 			else if(lt1.find("<")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<"));
 			}
 			else 

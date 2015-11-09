@@ -10,5 +10,5 @@ int main(int argc, char const *argv[])
 {
 	interpreter inter;
 	inter.interpreter_begin();
-	Buf.free((string)"test_a.index");
+	//Buf.free((string)"test_a.index");
 }
