@@ -590,6 +590,7 @@ void interpreter::interpreter_begin(string filename)
 	char nt = 0;
 	while(scanf("%c", &nt)!=EOF)
 	{
+		cerr << filename << endl;
 		string command="";
 		do
 		{
@@ -620,5 +621,6 @@ void interpreter::interpreter_begin(string filename)
 	if(filename!="")
 	{
 		fclose(stdin);
+		freopen("Con", "r", stdin);
 	}
 }
