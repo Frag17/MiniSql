@@ -44,7 +44,7 @@ string api::DropTable(string name)
 			//Buf.dropFile((IndexName + ".index"));			不需要，index自己会删掉
 			Rec.dropTable(*Cat.tables[i]);
 			Cat.dropTable(name);
-			return 0; 
+			return ""; 
 		}
 	return "Table doesn't exist";
 }
@@ -452,7 +452,8 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			}
 		}
 		/*得到data*/
-		Rec.selectByPointer(*tab, resPtrs, dat);
+		if (resPtrs.size() != 0)
+			Rec.selectByPointer(*tab, resPtrs, dat);
 	}
 
 	/*无index的条件*/
@@ -564,91 +565,86 @@ string api::Del(string tableName, vector<Condition>& conditions){
 			tind.IndexName=pat->indexName;
 			tind.attribute.attribute=*pat;
 			tind.attribute.attributeOrder=i;
-			if (pat->isPrimaryKey == true) {
-				primarykeyOrder = i;
-			}
+			Ind2Del.push_back(tind);
+		}
+		if (pat->isPrimaryKey == true) {
+			primarykeyOrder = i;
 		}
 	}
 	
 	int n;
 	vector<string> KeytoDel;
 	SingleData dat;
-	SingleData* dat2Del=new SingleData[tind.size()];
+	SingleData* dat2Del=new SingleData[Ind2Del.size()];
 	Data data;
 
 	vector<IndexInfo>::iterator itind;
 	Rec.selectRecord(*tab, data);
 	for(vector<Tuple>::iterator itd=data.begin();itd!=data.end();itd++){
+		bool ifDel = true;
 		for(vector<Condition>::iterator itc=conditions.begin();itc!=conditions.end();itc++){
 			int cmp = datacmp((*itd)[itc->attributeOrder], itc->value, itc->type);
 			if (itc->op < GT) {
 				if (itc->op == EQ) {
-					if (cmp == 0) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=tind.begin(), i=0;itind!=tind.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute.attributeOrder]);
-						}
+					if (cmp != 0) {
+						ifDel = false;
 						break;
 					}
 				}
 				else if (itc->op == NE) {
-					if (cmp != 0) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=Ind2Del.begin(), i=0;itind!=	Ind2Del.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
-						}
+					if (cmp == 0) {
+						ifDel = false;
 						break;
 					}
 				}
 				else {
-					if (cmp == -1) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
-						}
+					if (cmp != -1) {
+						ifDel = false;
 						break;
 					}
 				}
 			}
 			else {
 				if (itc->op == GT) {
-					if (cmp == 1) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
-						}
+					if (cmp != 1) {
+						ifDel = false;
 						break;
 					}
 				}
 				else if (itc->op == LE) {
-					if (cmp != 1) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
-						}
+					if (cmp == 1) {
+						ifDel = false;
 						break;
 					}
 				}
 				else {
-					if (cmp != -1) {
-						dat.push_back((*itd)[primarykeyOrder]);
-						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
-							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
-						}
+					if (cmp == -1) {
+						ifDel = false;
 						break;
 					}
 				}
 			}
 		}
+
+		if (ifDel) {
+			dat.push_back((*itd)[primarykeyOrder]);
+			for (itind = Ind2Del.begin(), i = 0; itind != Ind2Del.end(); itind++, i++) {
+				dat2Del[i].push_back((*itd)[itind->attribute.attributeOrder]);
+			}
+		}
 	}
 	
 	n = dat.size();
-	Rec.deleteByPrimaryKey(*tab, dat);
-	for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++, i++){
-		for(vector<string> itstr=dat2Del[i].begin();itstr!=dat2Del.end();itstr++){
-			Ind.deleteRecord(itind->attribute.name, itstr);
+	if (n != 0) {
+		Rec.deleteByPrimaryKey(*tab, dat);
+		for (itind = Ind2Del.begin(), i = 0; itind != Ind2Del.end(); itind++, i++) {
+			for (vector<string>::iterator itstr = dat2Del[i].begin(); itstr != dat2Del[i].end(); itstr++) {
+				Ind.deleteRecord(itind->IndexName, *itstr);
+			}
 		}
-	}                                                                          
+	}
+
+	delete[] dat2Del;
 	stringstream ss;                                                           
 	ss<<n;                                                            
 	string t;
