@@ -557,122 +557,100 @@ string api::Del(string tableName, vector<Condition>& conditions){
 		itc++;
 	}
 
+	vector<IndexInfo> Ind2Del; 
 	for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
-		if (pat->isPrimaryKey == true) {
-			primarykeyOrder = i;
-			break;
+		if(pat->hasIndex){
+			IndexInfo tind;
+			tind.IndexName=pat->indexName;
+			tind.attribute.attribute=*pat;
+			tind.attribute.attributeOrder=i;
+			if (pat->isPrimaryKey == true) {
+				primarykeyOrder = i;
+			}
 		}
 	}
 	
 	int n;
 	vector<string> KeytoDel;
 	SingleData dat;
+	SingleData* dat2Del=new SingleData[tind.size()];
 	Data data;
-	if(conditions.size()==1&&conditions[0].attributeOrder==primarykeyOrder){			//只有一个条件且限定primarykey 
-		Rec.selectAttribute(*tab, primarykeyOrder, dat, vector<int>());
-		for(vector<string>::iterator itdat=dat.begin();itdat!=dat.end();){
-			int cmp=datacmp(*itdat, conditions[0].value, conditions[0].type);
-		 	if (conditions[0].op < GT) {
-				if (conditions[0].op == EQ) {
-					if (cmp != 0) {
-						itdat = dat.erase(itdat);
-						continue;
-					}
-				}
-				else if (conditions[0].op == NE) {
+
+	vector<IndexInfo>::iterator itind;
+	Rec.selectRecord(*tab, data);
+	for(vector<Tuple>::iterator itd=data.begin();itd!=data.end();itd++){
+		for(vector<Condition>::iterator itc=conditions.begin();itc!=conditions.end();itc++){
+			int cmp = datacmp((*itd)[itc->attributeOrder], itc->value, itc->type);
+			if (itc->op < GT) {
+				if (itc->op == EQ) {
 					if (cmp == 0) {
-						itdat = dat.erase(itdat);
-						continue;
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=tind.begin(), i=0;itind!=tind.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute.attributeOrder]);
+						}
+						break;
 					}
 				}
-				else {
-					if (cmp != -1) {
-						itdat = dat.erase(itdat);
-						continue;
-					}
-				}
-			}
-			else {
-				if (conditions[0].op == GT) {
-					if (cmp != 1) {
-						itdat = dat.erase(itdat);
-						continue;
-					}
-				}
-				else if (conditions[0].op == LE) {
-					if (cmp == 1) {
-						itdat = dat.erase(itdat);
-						continue;
+				else if (itc->op == NE) {
+					if (cmp != 0) {
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=Ind2Del.begin(), i=0;itind!=	Ind2Del.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
+						}
+						break;
 					}
 				}
 				else {
 					if (cmp == -1) {
-						itdat = dat.erase(itdat);
-						continue;
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
+						}
+						break;
 					}
 				}
 			}
-			
-			itdat++;
-		}
-	}
-	else if(conditions.size()==0){
-		Rec.selectAttribute(*tab, primarykeyOrder, dat, vector<int>());
-	}
-	else{
-		Data data;
-		Rec.selectRecord(*tab, data);
-		for(vector<Tuple>::iterator itd=data.begin();itd!=data.end();itd++){
-			for(vector<Condition>::iterator itc=conditions.begin();itc!=conditions.end();itc++){
-				int cmp = datacmp((*itd)[itc->attributeOrder], itc->value, itc->type);
-				if (itc->op < GT) {
-					if (itc->op == EQ) {
-						if (cmp == 0) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
+			else {
+				if (itc->op == GT) {
+					if (cmp == 1) {
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
 						}
+						break;
 					}
-					else if (itc->op == NE) {
-						if (cmp != 0) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
+				}
+				else if (itc->op == LE) {
+					if (cmp != 1) {
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
 						}
-					}
-					else {
-						if (cmp == -1) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
-						}
+						break;
 					}
 				}
 				else {
-					if (itc->op == GT) {
-						if (cmp == 1) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
+					if (cmp != -1) {
+						dat.push_back((*itd)[primarykeyOrder]);
+						for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++,i++){
+							dat2del[i].push_back((*itd)[itind->attribute->attributeOrder]);
 						}
-					}
-					else if (itc->op == LE) {
-						if (cmp != 1) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
-						}
-					}
-					else {
-						if (cmp != -1) {
-							dat.push_back((*itd)[primarykeyOrder]);
-							break;
-						}
+						break;
 					}
 				}
- 			}
+			}
 		}
 	}
 	
 	n = dat.size();
 	Rec.deleteByPrimaryKey(*tab, dat);
-	stringstream ss;
-	ss<<n;
+	for(itind=Ind2Del.begin(), i=0;itind!=Ind2Del.end();itind++, i++){
+		for(vector<string> itstr=dat2Del[i].begin();itstr!=dat2Del.end();itstr++){
+			Ind.deleteRecord(itind->attribute.name, itstr);
+		}
+	}                                                                          
+	stringstream ss;                                                           
+	ss<<n;                                                            
 	string t;
 	ss>>t;
 	t+="行受影响";
