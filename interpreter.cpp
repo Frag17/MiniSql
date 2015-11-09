@@ -94,7 +94,7 @@ void Cond(string attrname,string op,string value,Condition &condition)
 }
 void interpreter::quit()
 {
-	printf("Quit successful");
+	printf("Quit successful\n");
 	exit(0);
 }
 void interpreter::create_table()
@@ -203,7 +203,7 @@ void interpreter::create_table()
 	if (msg != "")
 		printf("%s\n", msg.c_str());
 	else
-		printf("Create table successful");
+		printf("Create table successful\n");
 }
 
 void interpreter::drop_table()
@@ -216,7 +216,7 @@ void interpreter::drop_table()
 		if(msg!="")
 			printf("%s\n",msg.c_str());
 		else
-			printf("Drop table successful");
+			printf("Drop table successful\n");
 	}
 	else 
 	{
@@ -241,7 +241,7 @@ void interpreter::create_index()
 		if(msg!="")
 			printf("%s\n",msg.c_str());
 		else
-			printf("Create index successful");
+			printf("Create index successful\n");
 	}
 }
 void interpreter::drop_index()
@@ -254,7 +254,7 @@ void interpreter::drop_index()
 		if (msg != "")
 			printf("%s\n", msg.c_str());
 		else
-			printf("Drop index successful");
+			printf("Drop index successful\n");
 	}
 	else 
 	{
@@ -420,7 +420,7 @@ void interpreter::insert()
 	if(msg!="")
 		printf("%s\n",msg.c_str());
 	else
-		printf("Insert successful");
+		printf("Insert successful\n");
 }
 void interpreter::del()
 {
@@ -530,7 +530,7 @@ void interpreter::del()
 	if(msg!="")
 		printf("%s\n",msg.c_str());
 	else
-		printf("Delete successful");
+		printf("Delete successful\n");
 }
 
 void interpreter::exec()
