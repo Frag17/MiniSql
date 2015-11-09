@@ -129,6 +129,7 @@ void interpreter::create_table()
 				if(t.attributes[i].name==lt3)
 				{
 					t.attributes[i].isPrimaryKey=1;
+					t.attributes[i].isUnique = 1;
 					break;
 				}
 			break;
@@ -512,9 +513,9 @@ void interpreter::del()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	/*string msg=Api.Delete(tabname,v);
+	string msg=Api.Del(tabname,v);
 	if(msg!="")
-		printf("%s\n",msg.c_str());*/
+		printf("%s\n",msg.c_str());
 }
 
 void interpreter::exec()
@@ -571,12 +572,11 @@ void interpreter::interpreter_begin(string filename)
 	{
 		freopen(filename.c_str(),"r",stdin);
 	}
-	while(true)
+	char nt = 0;
+	while(scanf("%c", &nt)!=EOF)
 	{
-		char nt=0;
 		string command="";
-		scanf("%c",&nt);
-		while(true)
+		do
 		{
 			if(nt=='\n')
 				command+=" ";
@@ -595,10 +595,12 @@ void interpreter::interpreter_begin(string filename)
 				command+=" ";
 			else 
 				command+=nt;
-			scanf("%c",&nt);
+		} while (scanf("%c", &nt) != EOF);
+		if (command != " " && command!="")
+		{
+			set_order(command);
+			process();
 		}
-		set_order(command);
-		process();
 	}
 	if(filename!="")
 	{

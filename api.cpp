@@ -10,6 +10,9 @@ string api::CreateTable(Table t)
 	
 	for(int i=0;i<t.attributes.size();i++)
 	{
+		for (int j = 0; j < i; j++)
+			if (t.attributes[i].name == t.attributes[j].name)
+				return "Attributes with the same name";
 		if(t.attributes[i].type==0)
 			return "Unrecognized data type£¡£¡";
 		if(t.attributes[i].type==1)
@@ -48,7 +51,7 @@ string api::DropTable(string name)
 
 string api::CreateIndex(string inname,string tabname,string arrname)
 {
-	bool find=0;
+ 	bool find=0;
 	for(int i=0;i<Cat.tables.size();i++)
 		if(Cat.tables[i]->tableName==tabname)
 			find=1;
@@ -92,6 +95,21 @@ string api::DropIndex(string inname)
 	for(int i=0;i<Cat.indexs.size();i++)
 		if(Cat.indexs[i]->indexName==inname)
 		{
+			std::string tableName;
+			Attribute attribute;
+			for (int j = 0; j < Cat.tables.size(); j++)
+			{
+
+				if (Cat.tables[j]->tableName == Cat.indexs[i]->tableName)
+				{
+					for (int k = 0; k < Cat.tables[j]->attributes.size(); k++)
+						if (Cat.tables[j]->attributes[k].indexName == inname)
+						{
+							Cat.tables[j]->attributes[k].hasIndex = 0;
+							Cat.tables[j]->attributes[k].indexName = "";
+						}
+				}
+			}
 			Ind.dropIndex(inname);
 			Cat.dropIndex(inname);
 			return "";
@@ -524,9 +542,10 @@ string api::Del(string tableName, vector<Condition>& conditions){
 	Table* tab = *Cat.findTable(tableName);
 	
 	int primarykeyOrder;
+	vector<Condition>::iterator itc = conditions.begin();
+	int i;
+	vector<Attribute>::iterator pat;
 	while (itc != conditions.end()) {
-		vector<Attribute>::iterator pat;
-		int i;
 		for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
 			if (pat->name == itc->attributeName)break;
 		}
@@ -535,8 +554,14 @@ string api::Del(string tableName, vector<Condition>& conditions){
 		itc->type = pat->type;
 		string st = singleCheck(itc->value, itc->type);
 		if (st != "")return "²éÑ¯Ê§°Ü£¬" + st;
-		if(pat->isPrimaryKey==true)primarykeyOrder = i;
 		itc++;
+	}
+
+	for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
+		if (pat->isPrimaryKey == true) {
+			primarykeyOrder = i;
+			break;
+		}
 	}
 	
 	int n;
@@ -599,23 +624,23 @@ string api::Del(string tableName, vector<Condition>& conditions){
 		Rec.selectRecord(*tab, data);
 		for(vector<Tuple>::iterator itd=data.begin();itd!=data.end();itd++){
 			for(vector<Condition>::iterator itc=conditions.begin();itc!=conditions.end();itc++){
-				int cmp = datacmp((*itc)[itc->attributeOrder], itc->value, itc->type);
+				int cmp = datacmp((*itd)[itc->attributeOrder], itc->value, itc->type);
 				if (itc->op < GT) {
 					if (itc->op == EQ) {
 						if (cmp == 0) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
 					else if (itc->op == NE) {
 						if (cmp != 0) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
 					else {
 						if (cmp == -1) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
@@ -623,19 +648,19 @@ string api::Del(string tableName, vector<Condition>& conditions){
 				else {
 					if (itc->op == GT) {
 						if (cmp == 1) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
 					else if (itc->op == LE) {
 						if (cmp != 1) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
 					else {
 						if (cmp != -1) {
-							dat.push_back((*itd)[primaryKeyOrder]);
+							dat.push_back((*itd)[primarykeyOrder]);
 							break;
 						}
 					}
@@ -654,4 +679,3 @@ string api::Del(string tableName, vector<Condition>& conditions){
 	t="É¾³ý³É¹¦£¬"+t; 
 	return t;
 }
-
