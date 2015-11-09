@@ -59,6 +59,9 @@ void attr(string lt1,string lt2,bool uni,string length,Attribute &v)
 {
 	v.name=lt1;
 	v.isUnique=uni;
+	v.hasIndex = 0;
+	v.indexName = "";
+	v.isPrimaryKey = 0;
 	if(lt2=="int")
 		v.type=2;
 	else if(lt2=="char")
@@ -197,8 +200,10 @@ void interpreter::create_table()
 		}
 	}
 	string msg=Api.CreateTable(t);
-	if(msg!="")
-		printf("%s\n",msg.c_str());
+	if (msg != "")
+		printf("%s\n", msg.c_str());
+	else
+		printf("Create table successful");
 }
 
 void interpreter::drop_table()
@@ -210,6 +215,8 @@ void interpreter::drop_table()
 		string msg=Api.DropTable(lt1);
 		if(msg!="")
 			printf("%s\n",msg.c_str());
+		else
+			printf("Drop table successful");
 	}
 	else 
 	{
@@ -233,6 +240,8 @@ void interpreter::create_index()
 		string msg=Api.CreateIndex(inname,tabname,arrname);
 		if(msg!="")
 			printf("%s\n",msg.c_str());
+		else
+			printf("Create index successful");
 	}
 }
 void interpreter::drop_index()
@@ -242,8 +251,10 @@ void interpreter::drop_index()
 	if(inname!="")
 	{
 		string msg=Api.DropIndex(inname);
-		if(msg!="")
-			printf("%s\n",msg.c_str());
+		if (msg != "")
+			printf("%s\n", msg.c_str());
+		else
+			printf("Drop index successful");
 	}
 	else 
 	{
@@ -277,32 +288,32 @@ void interpreter::select()
 			lt1=next_state();
 			if(lt1.find("<>")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<>"));
 			}
 			else if(lt1.find("<=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<="));
 			}
 			else if(lt1.find(">=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">="));
 			}
 			else if(lt1.find("=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("="));
 			}
 			else if(lt1.find(">")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">"));
 			}
 			else if(lt1.find("<")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<"));
 			}
 			else 
@@ -408,6 +419,8 @@ void interpreter::insert()
 	string msg=Api.Insert(tabname,v);
 	if(msg!="")
 		printf("%s\n",msg.c_str());
+	else
+		printf("Insert successful");
 }
 void interpreter::del()
 {
@@ -516,6 +529,8 @@ void interpreter::del()
 	string msg=Api.Del(tabname,v);
 	if(msg!="")
 		printf("%s\n",msg.c_str());
+	else
+		printf("Delete successful");
 }
 
 void interpreter::exec()
