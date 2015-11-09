@@ -581,7 +581,7 @@ public:
 
 		string s2 = Buf.getBlock((indexName + ".index"), rootPtr, 0, 4);
 		int size = atoi(s2.c_str());
-		string s = Buf.getBlock((indexName + ".index"), rootPtr, 0, 4);
+		string s = Buf.getBlock((indexName + ".index"), rootPtr, 5, 5 + size);
 		Node nod = s;
 		Node* t = &nod;
 

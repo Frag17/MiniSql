@@ -200,8 +200,10 @@ void interpreter::create_table()
 		}
 	}
 	string msg=Api.CreateTable(t);
-	if(msg!="")
-		printf("%s\n",msg.c_str());
+	if (msg != "")
+		printf("%s\n", msg.c_str());
+	else
+		printf("Create table successful");
 }
 
 void interpreter::drop_table()
@@ -213,6 +215,8 @@ void interpreter::drop_table()
 		string msg=Api.DropTable(lt1);
 		if(msg!="")
 			printf("%s\n",msg.c_str());
+		else
+			printf("Drop table successful");
 	}
 	else 
 	{
@@ -236,6 +240,8 @@ void interpreter::create_index()
 		string msg=Api.CreateIndex(inname,tabname,arrname);
 		if(msg!="")
 			printf("%s\n",msg.c_str());
+		else
+			printf("Create index successful");
 	}
 }
 void interpreter::drop_index()
@@ -245,8 +251,10 @@ void interpreter::drop_index()
 	if(inname!="")
 	{
 		string msg=Api.DropIndex(inname);
-		if(msg!="")
-			printf("%s\n",msg.c_str());
+		if (msg != "")
+			printf("%s\n", msg.c_str());
+		else
+			printf("Drop index successful");
 	}
 	else 
 	{
@@ -411,6 +419,8 @@ void interpreter::insert()
 	string msg=Api.Insert(tabname,v);
 	if(msg!="")
 		printf("%s\n",msg.c_str());
+	else
+		printf("Insert successful");
 }
 void interpreter::del()
 {
@@ -519,6 +529,8 @@ void interpreter::del()
 	string msg=Api.Del(tabname,v);
 	if(msg!="")
 		printf("%s\n",msg.c_str());
+	else
+		printf("Delete successful");
 }
 
 void interpreter::exec()
