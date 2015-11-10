@@ -575,7 +575,7 @@ void interpreter::process()
 		insert();
 	else if(ty=="delete")
 		del();
-	else if(ty=="exec")
+	else if(ty=="execfile")
 		exec();
 	else
 		printf("unrecogenized command\n");
