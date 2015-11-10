@@ -103,7 +103,7 @@ void RecordManager::selectByPointer(Table& table, std::vector<int>& Pointers, Da
 	for (int i = 0; i < (int)Pointers.size(); i++)
 	{
 		int blockOffset = Pointers[i] >> 16;
-		int start = Pointers[i] & 0x00FF;
+		int start = Pointers[i] & 0xFFFF;
 		std::string record = Buf.getRecord(fileName,blockOffset,start);
 		tempData.push_back(record);
 	}
