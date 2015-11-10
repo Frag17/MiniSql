@@ -502,8 +502,8 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 				}
 
 			}
+			if (itc == conditions.end())itdat++;
 		}
-		if (itc == conditions.end())itdat++;
 	}
 
 	/*selectÍê³É£¬ Êä³ö*/
