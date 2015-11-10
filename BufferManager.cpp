@@ -126,7 +126,8 @@ std::list<Block*>::iterator  BufferManager::replace(const std::string& fileName,
 {
 	std::list<Block*>::iterator it = fullBuffer.end();		it--;
 	while ((*it)->isPinned == 1)  it--;
-
+	
+	(*it)->writeFile();
 	(*it)->readFile(fileName, blockOffset);
 	fullBuffer.push_front(*it);
 	fullBuffer.erase(it);

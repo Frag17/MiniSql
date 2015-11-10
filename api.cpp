@@ -166,7 +166,7 @@ string api::typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New) {
 		string t = singleCheck(s, type);
 		if (t != "")return t;
 		if (type == CHAR) {
-			if (s.length() > length)return "string'" + s + "'is too long;
+			if (s.length() > length)return "string'" + s + "'is too long";
 			while (s.length() < length)s += " ";
 		}
 		New.push_back(s);
