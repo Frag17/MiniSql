@@ -121,15 +121,15 @@ string api::singleCheck(string& s, int type) {
 	int in;
 	float fl;
 	stringstream ss;
-	if (s.find('\t') != -1)return "'" + s + "'存在非法字符'\t'";
+	if (s.find('\t') != -1)return "'" + s + "'Illegal character'\t'";
 	switch (type) {
 	case CHAR:
-		if (s[0] != '\'' || s[s.length() - 1] != '\'')return "字符串" + s + "与char类型不匹配";
+		if (s[0] != '\'' || s[s.length() - 1] != '\'')return "string" + s + "dose not match type char";
 		s = s.substr(1, s.length() - 2);
 		break;
 	case INT:
 		for (int i = 0; i < s.length(); i++) {
-			if ((s[i]<'0' || s[i]>'9') && s[i] != ' ')return "'" + s + "'与int类型不符";
+			if ((s[i]<'0' || s[i]>'9') && s[i] != ' ')return "'" + s + "'dose not match type char";
 		}
 		in = atoi(s.c_str());
 		ss.clear();
@@ -140,7 +140,7 @@ string api::singleCheck(string& s, int type) {
 		break;
 	case FLOAT:
 		for (int i = 0; i < s.length(); i++) {
-			if ((s[i]<'0' || s[i]>'9') && s[i] != '.' && s[i] != ' ')return "'" + s + "'与int类型不符";
+			if ((s[i]<'0' || s[i]>'9') && s[i] != '.' && s[i] != ' ')return "'" + s + "'dose not match type int";
 		}
 		fl = atof(s.c_str());
 		ss.clear();
@@ -161,28 +161,28 @@ string api::typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New) {
 	for (pt = Old.begin(), pa = attr.begin(); pt != Old.end() && pa != attr.end(); pt++, pa++) {
 		int type = pa->type;
 		string s = *pt;
-		if (s.find('\t') != -1)return "'" + s + "'存在非法字符'\t'";
+		if (s.find('\t') != -1)return "'" + s + "'exits illegal character'\t'";
 		int length = pa->length;
 		string t = singleCheck(s, type);
 		if (t != "")return t;
 		if (type == CHAR) {
-			if (s.length() > length)return "字符串'" + s + "'过长";
+			if (s.length() > length)return "string'" + s + "'is too long;
 			while (s.length() < length)s += " ";
 		}
 		New.push_back(s);
 	}
-	if (pt != Old.end())return "插入数据过多";
-	if (pa != attr.end())return "插入数据过少";
+	if (pt != Old.end())return "too many arguments to insert";
+	if (pa != attr.end())return "too few arguments to insert";
 	return "";
 }
 
 string api::nameCheck(string name) {
 	for (int i = 0; i < name.length(); i++) {
 	if ((name[i] >= '0'&&name[i] <= '9') || (name[i] <= 'Z'&&name[i] >= 'A') || (name[i] <= 'z'&&name[i] >= 'a') || name[i] == '_')continue;
-		return "名称'" + name + "'存在非法字符";
+		return "name'" + name + "' exits illegal character";
 	}
 	if (name == "select" || name == "from" || name == "where" || name == "create" || name == "table" || name == "unique" || name == "insert" || name == "into" || name == "delete" || name == "index" || name == "on")
-		return name + "为数据库保留字";
+		return name + "is key words of database";
 	return "";
 }
 
@@ -212,16 +212,16 @@ int api::datacmp(const string& Lstr, const string& Rstr, const int& type) {
 }
 
 string api::Insert(string tableName, Tuple& tup) {
-	if (Cat.existTable(tableName) == false)return "插入失败：找不到表" + tableName;
+	if (Cat.existTable(tableName) == false)return "Insert failure：can not find table " + tableName;
 	Table* tab = *Cat.findTable(tableName);
 	/*if (tab == nullptr) {
-	cout << "插入失败：找不到表" + tableName;
+	cout << "Insert failure：can not find table+ tableName;
 	return;
 	}*/
 	Tuple ne;
 	string s = typeCheck(tup, tab->attributes, ne);
 	if (s != "") {
-		return "插入失败：" + s;
+		return "Insert failure：" + s;
 
 	}
 	vector<Attribute>* pattr = &tab->attributes;
@@ -247,7 +247,7 @@ string api::Insert(string tableName, Tuple& tup) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		int i = pin->attribute.attributeOrder;
 		if (bpt.find(ne[i]) != -1) {
-			return "插入失败，属性" + pin->attribute.attribute.name + "值" + ne[i] + "重复";
+			return "Insert failure，Repeated attributes value " + pin->attribute.attribute.name +"   "+ ne[i] ;
 		}
 	}
 	if (!isattr.empty()) {			//没有index的unique,遍历查询值重复
@@ -257,7 +257,7 @@ string api::Insert(string tableName, Tuple& tup) {
 			int i = pat->attributeOrder;
 			for (vector<string>::iterator pstr = t.begin(); pstr != t.end(); pstr++) {
 				if ((*pstr) == ne[i]) {
-					return "插入失败，属性" + pat->attribute.name + "值" + ne[i] + "重复";
+					return "Insert failure，Repeated attributes value " + pat->attribute.name +"   "+ ne[i];
 				}
 			}
 		}
@@ -267,11 +267,11 @@ string api::Insert(string tableName, Tuple& tup) {
 		BPlusTree bpt = Ind.openIndex(pin->IndexName);
 		bpt.insertRecord(ne[pin->attribute.attributeOrder], ptr);
 	}
-	return "插入成功";
+	return "";
 }
 
 string api::Select(string tableName, vector<string>& attributes, vector<Condition>& conditions) {
-	if (Cat.existTable(tableName) == false)return "查询失败：找不到表" + tableName;
+	if (Cat.existTable(tableName) == false)return "select failure：can not     find table" + tableName;
 	Table* tab = *Cat.findTable(tableName);
 	vector<AttributeInfo> outputAttr;
 	/*保存需要输出的列的信息*/
@@ -297,7 +297,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 					break;
 				}
 			}
-			if (pat == tab->attributes.end())return "查询失败，找不到属性" + *ptb;
+			if (pat == tab->attributes.end())return "select failure，can not find attribute" + *ptb;
 		}
 	}
 
@@ -316,7 +316,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 		for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
 			if (pat->name == itc->attributeName)break;
 		}
-		if (pat == tab->attributes.end())return "查询失败，未找到属性" + itc->attributeName;
+		if (pat == tab->attributes.end())return "select failure，can not find attribute" + itc->attributeName;
 		if (pat->hasIndex) {			//分类，分为有index的条件查询与无index的条件查询
 			ConditionWithIndex t;
 			t.indxnam = pat->indexName;
@@ -324,7 +324,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			t.op = itc->op;
 			t.value = itc->value;
 			string st = singleCheck(t.value, t.type);
-			if (st != "")return "查询失败，" + st;
+			if (st != "")return "select failure，" + st;
 			CwIs.push_back(t);
 
 			itc = conditions.erase(itc);
@@ -333,7 +333,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 			itc->attributeOrder = i;
 			itc->type = pat->type;
 			string st = singleCheck(itc->value, itc->type);
-			if (st != "")return "查询失败，" + st;
+			if (st != "")return "select failure，" + st;
 			itc++;
 		}
 	}
@@ -539,7 +539,7 @@ string api::Select(string tableName, vector<string>& attributes, vector<Conditio
 }
 
 string api::Del(string tableName, vector<Condition>& conditions){
-	if (Cat.existTable(tableName) == false)return "查询失败：找不到表" + tableName;
+	if (Cat.existTable(tableName) == false)return "Delete failure：can not find table" + tableName;
 	Table* tab = *Cat.findTable(tableName);
 	
 	int primarykeyOrder;
@@ -550,11 +550,11 @@ string api::Del(string tableName, vector<Condition>& conditions){
 		for (pat = tab->attributes.begin(), i = 0; pat != tab->attributes.end(); pat++, i++) {
 			if (pat->name == itc->attributeName)break;
 		}
-		if (pat == tab->attributes.end())return "查询失败，未找到属性" + itc->attributeName;
+		if (pat == tab->attributes.end())return "Delete failure：can not find attrbute" + itc->attributeName;
 		itc->attributeOrder = i;
 		itc->type = pat->type;
 		string st = singleCheck(itc->value, itc->type);
-		if (st != "")return "查询失败，" + st;
+		if (st != "")return "Delete failure，" + st;
 		itc++;
 	}
 
@@ -649,7 +649,7 @@ string api::Del(string tableName, vector<Condition>& conditions){
 	ss<<n;                                                            
 	string t;
 	ss>>t;
-	t+="行受影响";
-	t="删除成功，"+t; 
+	t+="rows have be changes";
+	t="delete successful，"+t; 
 	return t;
 }

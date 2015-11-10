@@ -106,7 +106,7 @@ void interpreter::create_table()
 	lt=next_state();
 	if(lt!="(")
 	{
-		printf("Syntax error,缺少 ( 在 %s 之后!\n",lt.c_str());
+		printf("Syntax error,need( after %s !\n",lt.c_str());
 		return ;
 	}
 	while(true)
