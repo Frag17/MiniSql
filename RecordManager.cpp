@@ -1,9 +1,4 @@
-#include"RecordManager.h"
-#include"CatalogManager.h"
-#include"BufferManager.h"
-#include<vector>
-#include<string>
-#include<fstream>
+#include"StdAfx.h"
 
 extern BufferManager Buf;
 extern CatalogManager Cat;
@@ -85,7 +80,7 @@ void RecordManager::selectRecord(Table& table,Data &data)
 		while (start<BLOCK_SIZE)
 		{
 			if (blockOffset + 1 == table.blockNum && start + table.recordSize > BLOCK_SIZE)//已经在最后一个block，并且所在record跨block，则必为空
-				return;
+				break;
 			std::string record = Buf.getRecord(fileName, blockOffset, start);
 			if (record[0] != '\0')
 				tempData.push_back(record);
@@ -108,7 +103,7 @@ void RecordManager::selectByPointer(Table& table, std::vector<int>& Pointers, Da
 	for (int i = 0; i < (int)Pointers.size(); i++)
 	{
 		int blockOffset = Pointers[i] >> 16;
-		int start = Pointers[i] & 0x00FF;
+		int start = Pointers[i] & 0xFFFF;
 		std::string record = Buf.getRecord(fileName,blockOffset,start);
 		tempData.push_back(record);
 	}

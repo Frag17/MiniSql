@@ -1,7 +1,6 @@
-#include"BufferManager.h"
-#include<fstream>
+#include"StdAfx.h"
 
-
+extern CatalogManager Cat;
 
 void Block::readFile(const std::string& fileName, int blockOffset)
 {
@@ -127,7 +126,8 @@ std::list<Block*>::iterator  BufferManager::replace(const std::string& fileName,
 {
 	std::list<Block*>::iterator it = fullBuffer.end();		it--;
 	while ((*it)->isPinned == 1)  it--;
-
+	
+	(*it)->writeFile();
 	(*it)->readFile(fileName, blockOffset);
 	fullBuffer.push_front(*it);
 	fullBuffer.erase(it);
@@ -173,7 +173,7 @@ std::string BufferManager::getRecord(const std::string& fileName, int blockOffse
 			record += (*it)->content[i+start];
 	return record;
 }
-std::stristd::string BufferManager::getBlock(const std::string& fileName, int blockOffset,int start,int end)
+std::string BufferManager::getBlock(const std::string& fileName, int blockOffset,int start,int end)
 {
 	int n = fileName.find(".index", 0);
 	Index *indexPtr = Cat.getIndexPtr(fileName.substr(0, n));

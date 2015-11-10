@@ -1,29 +1,24 @@
 #ifndef _Record_Manager_
 #define _Record_Manager_
-#include"CatalogManager.h"
-#include"BufferManager.h"
-
-#include<vector>
-#include<string>
 
 #define INTSIZE sizeof(int);
 #define CHARSIZE sizeof(char);
 #define FLOATSIZE sizeof(float);
 
-enum Op
-{
-	EQ,NE,LT,GT,LE,GE,
-};
-
-
-class Condition
-{
-public:
-	Attribute attribute;
-	Op op;
-	std::string value;
-};
-typedef std::vector<Condition> Conditions;
+//enum Op
+//{
+//	EQ,NE,LT,GT,LE,GE,
+//};
+//
+//
+//class Condition
+//{
+//public:
+//	Attribute attribute;
+//	Op op;
+//	std::string value;
+//};
+//typedef std::vector<Condition> Conditions;
 
 typedef std::vector<std::string> Tuple;
 typedef std::vector<Tuple> Data;

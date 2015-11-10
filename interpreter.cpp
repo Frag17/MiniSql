@@ -1,9 +1,7 @@
-#include "interpreter.h"
-#include <vector>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include"StdAfx.h"
 using std::vector;
+
+extern api Api;
 void interpreter::set_order(string ORDER)
 {
 	order=ORDER;
@@ -37,7 +35,7 @@ string interpreter::next_state(char spl)
 	}
 	return ty;
 }
-string interpreter::match(string format)
+string  interpreter::match(string format)
 {
 	string re="get",lt1="",lt2;
 	format+=" ";
@@ -57,37 +55,58 @@ string interpreter::match(string format)
 	}
 	return re;
 }
-Attribute attr(string lt1,string lt2,bool uni,string length)
+void attr(string lt1,string lt2,bool uni,string length,Attribute &v)
 {
-	Attribute v;
 	v.name=lt1;
 	v.isUnique=uni;
-	if(lt1=="int")
+	v.hasIndex = 0;
+	v.indexName = "";
+	v.isPrimaryKey = 0;
+	if(lt2=="int")
 		v.type=2;
-	else if(lt1=="char")
+	else if(lt2=="char")
 	{
 		v.type=1;
-		v.length=atoi(length);
+		v.length=atoi(length.c_str());
 	}	
-	else if(lt1=="float")
+	else if(lt2=="float")
 		v.type=3;
 	else 
 		v.type=0;
-	return v;
+}
+
+void Cond(string attrname,string op,string value,Condition &condition)
+{
+	condition.attributeName=attrname;
+	condition.value=value;
+	if(op=="=")
+		condition.op=EQ;
+	else if(op=="<")
+		condition.op=LT;
+	else if(op==">")
+		condition.op=GT;
+	else if(op=="<=")
+		condition.op=LE;
+	else if(op==">=")
+		condition.op=GE;
+	else if(op=="<>")
+		condition.op=NE;
 }
 void interpreter::quit()
 {
+	printf("Quit successful\n");
 	exit(0);
 }
 void interpreter::create_table()
 {
 	string lt,name,lt1,lt2,lt3;
 	Table t;
+	Attribute attribute;
 	t.tableName=next_state();
 	lt=next_state();
 	if(lt!="(")
 	{
-		printf("Syntax error,缺少 ( 在 %s 之后!\n",lt.c_str());
+		printf("Syntax error,need( after %s !\n",lt.c_str());
 		return ;
 	}
 	while(true)
@@ -113,12 +132,16 @@ void interpreter::create_table()
 				if(t.attributes[i].name==lt3)
 				{
 					t.attributes[i].isPrimaryKey=1;
+					t.attributes[i].isUnique = 1;
 					break;
 				}
 			break;
 		}
 		else if(lt3==",")
-			t.attributes.push_back(attr(lt1,lt2,0,""));
+		{
+			attr(lt1,lt2,0,"",attribute);
+			t.attributes.push_back(attribute);
+		}
 		else if(lt2=="char"&&lt3=="(")
 		{
 			string length="";
@@ -135,7 +158,10 @@ void interpreter::create_table()
 			{
 				lt3=next_state();
 				if(lt3==",")
-					t.attributes.push_back(attr(lt1,lt2,1,length));
+				{
+					attr(lt1,lt2,1,length,attribute);
+					t.attributes.push_back(attribute);
+				}
 				else 
 				{
 					printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -143,7 +169,10 @@ void interpreter::create_table()
 				}
 			}
 			else if(lt3==",")
-				t.attributes.push_back(attr(lt1,lt2,0,length));
+			{
+				attr(lt1,lt2,0,length,attribute);
+				t.attributes.push_back(attribute);
+			}
 			else 
 			{
 				printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -153,7 +182,10 @@ void interpreter::create_table()
 		else 
 		{
 			if(lt3=="unique")
-				t.attributes.push_back(attr(lt1,lt2,1,""));
+			{
+				attr(lt1,lt2,1,"",attribute);
+				t.attributes.push_back(attribute);
+			}
 			else 
 			{
 				printf("Syntax error near %s %s %s!\n",lt1.c_str(),lt2.c_str(),lt3.c_str());
@@ -167,7 +199,11 @@ void interpreter::create_table()
 			}
 		}
 	}
-	printf("call create table api\n");//call api
+	string msg=Api.CreateTable(t);
+	if (msg != "")
+		printf("%s\n", msg.c_str());
+	else
+		printf("Create table successful\n");
 }
 
 void interpreter::drop_table()
@@ -176,7 +212,11 @@ void interpreter::drop_table()
 	lt1=match("* ;");
 	if(lt1!="")
 	{
-		printf("call drop table api\n");//call api
+		string msg=Api.DropTable(lt1);
+		if(msg!="")
+			printf("%s\n",msg.c_str());
+		else
+			printf("Drop table successful\n");
 	}
 	else 
 	{
@@ -197,8 +237,11 @@ void interpreter::create_index()
 	}
 	else 
 	{
-		printf("call create index api\n");//call api
-		return ;
+		string msg=Api.CreateIndex(inname,tabname,arrname);
+		if(msg!="")
+			printf("%s\n",msg.c_str());
+		else
+			printf("Create index successful\n");
 	}
 }
 void interpreter::drop_index()
@@ -207,7 +250,11 @@ void interpreter::drop_index()
 	inname=match("* ;");
 	if(inname!="")
 	{
-		printf("call drop index api\n");//call api
+		string msg=Api.DropIndex(inname);
+		if (msg != "")
+			printf("%s\n", msg.c_str());
+		else
+			printf("Drop index successful\n");
 	}
 	else 
 	{
@@ -218,8 +265,9 @@ void interpreter::drop_index()
 
 void interpreter::select()
 {
-	vector<condition> v;
+	vector<Condition> v;
 	string lt,tabname,lt1,lt2,lt3;
+	Condition condition;
 	lt=match("* from");
 	if(lt!="*")
  	{
@@ -240,32 +288,32 @@ void interpreter::select()
 			lt1=next_state();
 			if(lt1.find("<>")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<>"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<>"));
 			}
 			else if(lt1.find("<=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find("<="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<="));
 			}
 			else if(lt1.find(">=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>")-2);
+				lt2=lt1.substr(lt1.find(">="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">="));
 			}
 			else if(lt1.find("=")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("="),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("="));
 			}
 			else if(lt1.find(">")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find(">"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find(">"));
 			}
 			else if(lt1.find("<")!=lt.npos)
 			{
-				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>")-1);
+				lt2=lt1.substr(lt1.find("<"),lt1.length()-lt1.find("<>"));
 				lt1=lt1.substr(0,lt1.find("<"));
 			}
 			else 
@@ -308,7 +356,8 @@ void interpreter::select()
 				return ;
 				
 			}
-			v.push_back(condition(lt1,lt2,lt3));
+			Cond(lt1,lt2,lt3,condition);
+			v.push_back(condition);
 			lt=next_state();
 			if(lt==";")
 				break;
@@ -324,11 +373,16 @@ void interpreter::select()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	printf("call select api\n");//call api
+	vector<string> vt;
+	vt.push_back("*");
+	string msg = Api.Select(tabname, vt, v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
 }
 
 void interpreter::insert()
 {
+	
 	vector<string> v;
 	int cnt=0;
 	string lt,tabname;
@@ -362,12 +416,17 @@ void interpreter::insert()
 		printf("Syntax error! can't recognize %s\n",lt.c_str());
 		return ;
 	}
-	printf("call insert api\n");//call api
+	string msg=Api.Insert(tabname,v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
+	else
+		printf("Insert successful\n");
 }
 void interpreter::del()
 {
-	vector<condition> v;
+	vector<Condition> v;
 	string lt,tabname,lt1,lt2,lt3;
+	Condition condition;
 	tabname=match("from *");
 	if(tabname=="")
 	{
@@ -450,7 +509,8 @@ void interpreter::del()
 				return ;
 				
 			}
-			v.push_back(condition(lt1,lt2,lt3));
+			Cond(lt1,lt2,lt3,condition);
+			v.push_back(condition);
 			lt=next_state();
 			if(lt==";")
 				break;
@@ -466,7 +526,11 @@ void interpreter::del()
 		printf("Syntax error!(after %s)\n",tabname.c_str());
 		return ;
 	}
-	printf("call delete api\n");//call api
+	string msg=Api.Del(tabname,v);
+	if(msg!="")
+		printf("%s\n",msg.c_str());
+	else
+		printf("Delete successful\n");
 }
 
 void interpreter::exec()
@@ -511,7 +575,7 @@ void interpreter::process()
 		insert();
 	else if(ty=="delete")
 		del();
-	else if(ty=="exec")
+	else if(ty=="execfile")
 		exec();
 	else
 		printf("unrecogenized command\n");
@@ -523,12 +587,11 @@ void interpreter::interpreter_begin(string filename)
 	{
 		freopen(filename.c_str(),"r",stdin);
 	}
-	while(true)
+	char nt = 0;
+	while(scanf("%c", &nt)!=EOF)
 	{
-		char nt=0;
 		string command="";
-		scanf("%c",&nt);
-		while(true)
+		do
 		{
 			if(nt=='\n')
 				command+=" ";
@@ -547,13 +610,16 @@ void interpreter::interpreter_begin(string filename)
 				command+=" ";
 			else 
 				command+=nt;
-			scanf("%c",&nt);
+		} while (scanf("%c", &nt) != EOF);
+		if (command != " " && command!="")
+		{
+			set_order(command);
+			process();
 		}
-		set_order(command);
-		process();
 	}
 	if(filename!="")
 	{
 		fclose(stdin);
+		freopen("Con", "r", stdin);
 	}
 }

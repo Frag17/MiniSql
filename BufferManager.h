@@ -1,15 +1,10 @@
 #ifndef _Buffer_Manager_
 #define _Buffer_Manager_
 
-#define MAX_BLOCK_AMOUNT 5
-#define BLOCK_SIZE 20
-#include<string>
-#include<list>
-#include<map>
-#include<vector>
-#include"CatalogManager.h"
+#define MAX_BLOCK_AMOUNT 10000
+#define BLOCK_SIZE 4096
 
-extern CatalogManager Cat;
+//extern CatalogManager Cat;
 
 
 class Block

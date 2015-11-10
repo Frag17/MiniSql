@@ -1,19 +1,17 @@
-#include"RecordManager.h"
-#include"IndexManager.h"
-#include"CatalogManager.h"
-
+#pragma once
 
 enum Op {
 	EQ, NE, LT, GT, LE, GE
 };
 
 struct AttributeInfo {
-	string attribute;
+	Attribute attribute;
 	int attributeOrder;
 };
 
 struct Condition {
-	AttributeInfo attribute;
+	string attributeName;
+	int attributeOrder;
 	int type;
 	Op op;
 	string value;
@@ -24,7 +22,6 @@ struct IndexInfo {
 	AttributeInfo attribute;
 };
 
-
 class api
 {
 public:
@@ -34,10 +31,11 @@ public:
 	string DropIndex(string inname);
 	string Select(string tableName, vector<string>& attributes, vector<Condition>& conditions);
 	//string Insert(string tabname,Tuple &v);
-	string Del();
-	string insert(string tableName, Tuple& tup);
+	string Del(string tableName, vector<Condition>& conditions);
+	string Insert(string tableName, Tuple& tup);
 private:
 	string singleCheck(string& value, int type);
 	string typeCheck(Tuple& Old,vector<Attribute>& attr, Tuple& New);
 	string nameCheck(string name);
+	int datacmp(const string& Lstr, const string& rstr, const int& type);	//按类型返回比较值,-1表示小于，0表示等于，1表示大于
 };

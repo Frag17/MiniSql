@@ -1,10 +1,13 @@
-#include "cstdio"
-#include "interpreter.h"
-using namespace std;
+#include"StdAfx.h"
+
+BufferManager Buf;
+RecordManager Rec;
+CatalogManager Cat;
+IndexManager Ind;
+api Api;
+
 int main(int argc, char const *argv[])
 {
-	interpreter ip;
-	printf("Root has logged\n");
-	ip.interpreter_begin();
-	return 0;
+	interpreter inter;
+	inter.interpreter_begin();
 }
