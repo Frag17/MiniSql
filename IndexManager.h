@@ -316,12 +316,12 @@ private:
 				Right->deleteRecord(0);
 
 				/*将子节点Parent指针改变*/
-				Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
-				string t = bt->getContent(0, 4);
-				//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
+				//Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
+				//string t = bt->getContent(0, 4);
+				string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 				size = atoi(t.c_str());
-				t = bt->getContent(5, 5 + size);
-				//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
+				//t = bt->getContent(5, 5 + size);
+				t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 				Node child(t);
 				child.Parent = Left->selfPtr;
 				t = (string)child;
@@ -330,11 +330,12 @@ private:
 				ss << size;
 				string t2;
 				ss >> t2;
-				bt->changeContent(0, "    ");
-				bt->changeContent(0, t2);
-				//Buf.changeValue((indexName + ".index"), P, 0, t2);
-				bt->changeContent(5, t);
-				//Buf.changeValue((indexName + ".index"), P, 5, t);
+				//bt->changeContent(0, "    ");
+				//bt->changeContent(0, t2);
+				Buf.changeValue((indexName + ".index"), P, 0, (string)"    ");
+				Buf.changeValue((indexName + ".index"), P, 0, t2);
+				//bt->changeContent(5, t);
+				Buf.changeValue((indexName + ".index"), P, 5, t);
 
 				Left->insertRecord(k, P);
 			}
@@ -345,12 +346,12 @@ private:
 				Left->deleteRecord(Left->num);
 
 				/*将子节点Parent指针改变*/
-				Block* bt = *Buf.readFileBlock((indexName + ".index"), P2);
-				string t = bt->getContent(0, 4);
-				//string t = Buf.getBlock((indexName + ".index"), P2, 0, 4);
+				//Block* bt = *Buf.readFileBlock((indexName + ".index"), P2);
+				//string t = bt->getContent(0, 4);
+				string t = Buf.getBlock((indexName + ".index"), P2, 0, 4);
 				size = atoi(t.c_str());
-				t = bt->getContent(5, 5 + size);
-				//string t = Buf.getBlock((indexName + ".index"), P2, 5, 5 + size);
+				//t = bt->getContent(5, 5 + size);
+				t = Buf.getBlock((indexName + ".index"), P2, 5, 5 + size);
 				Node child(t);
 				child.Parent = Right->selfPtr;
 				t = (string)child;
@@ -359,11 +360,12 @@ private:
 				ss << size;
 				string t2;
 				ss >> t2;
-				bt->changeContent(0, "    ");
-				bt->changeContent(0, t2);
-				//Buf.changeValue((indexName + ".index"), P2, 0, t2);
-				bt->changeContent(5, t);
-				//Buf.changeValue((indexName + ".index"), P2, 5, t);
+				//bt->changeContent(0, "    ");
+				//bt->changeContent(0, t2);
+				Buf.changeValue((indexName + ".index"), P2, 0, (string)"    ");
+				Buf.changeValue((indexName + ".index"), P2, 0, t2);
+				//bt->changeContent(5, t);
+				Buf.changeValue((indexName + ".index"), P2, 5, t);
 
 				Right->Ptrs[0] = P2;
 				Right->insertRecord(k, P);
@@ -383,12 +385,12 @@ private:
 			Left->insertRecord(k, P);
 			if (!Left->isLeaf) {
 				/*将子节点Parent指针改变*/
-				Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
-				string t = bt->getContent(0, 4);
-				//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
+				//Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
+				//string t = bt->getContent(0, 4);
+				string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 				int size = atoi(t.c_str());
-				t = bt->getContent(5, 5 + size);
-				//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
+				//t = bt->getContent(5, 5 + size);
+				t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 				Node child(t);
 				child.Parent = Left->selfPtr;
 				t = (string)child;
@@ -397,11 +399,12 @@ private:
 				ss << size;
 				string t2;
 				ss >> t2;
-				bt->changeContent(0, "    ");
-				bt->changeContent(0, t2);
-				//Buf.changeValue((indexName + ".index"), P, 0, t2);
-				bt->changeContent(5, t);
-				//Buf.changeValue((indexName + ".index"), P, 5, t);
+				//bt->changeContent(0, "    ");
+				//bt->changeContent(0, t2);
+				Buf.changeValue((indexName + ".index"), P, 0, (string)"    ");
+				Buf.changeValue((indexName + ".index"), P, 0, t2);
+				//bt->changeContent(5, t);
+				Buf.changeValue((indexName + ".index"), P, 5, t);
 			}
 		}
 		if (Left->isLeaf) {
@@ -413,12 +416,12 @@ private:
 			Left->insertRecord(k, P);
 
 			/*将子节点Parent指针改变*/
-			Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
-			string t = bt->getContent(0, 4);
-			//string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
+			//Block* bt = *Buf.readFileBlock((indexName + ".index"), P);
+			//string t = bt->getContent(0, 4);
+			string t = Buf.getBlock((indexName + ".index"), P, 0, 4);
 			int size = atoi(t.c_str());
-			t = bt->getContent(5, 5 + size);
-			//t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
+			//t = bt->getContent(5, 5 + size);
+			t = Buf.getBlock((indexName + ".index"), P, 5, 5 + size);
 			Node child(t);
 			child.Parent = Left->selfPtr;
 			t = (string)child;
@@ -427,11 +430,12 @@ private:
 			ss << size;
 			string t2;
 			ss >> t2;
-			bt->changeContent(0, "    ");
-			bt->changeContent(0, t2);
-			//Buf.changeValue((indexName + ".index"), P, 0, t2);
-			bt->changeContent(5, t);
-			//Buf.changeValue((indexName + ".index"), P, 5, t);
+			//bt->changeContent(0, "    ");
+			//bt->changeContent(0, t2);
+			Buf.changeValue((indexName + ".index"), P, 0, (string)"    ");
+			Buf.changeValue((indexName + ".index"), P, 0, t2);
+			//bt->changeContent(5, t);
+			Buf.changeValue((indexName + ".index"), P, 5, t);
 		}
 
 		return true;
